@@ -1,0 +1,125 @@
+#tool
+    {
+		/* padding-top: 10px; */
+		/* padding-bottom: 20px; */
+		/* font-size:20px; */
+		background-color:#E0E0E0;
+		color: #36648B;
+		font-size:110%;
+    }
+
+label.radio { 
+  padding-left: 18px;
+  padding-right: 0px;
+  margin-left: 3px;
+  display: inline-block; 
+}
+
+.radio input[type="radio"] {
+  float: none; 
+}
+
+label.checkbox  { 
+  display: inline-block; 
+}
+
+.checkbox input[type="checkbox"] { 
+  float: none; 
+}
+
+select { 
+  max-width: 200px; 
+}
+
+textarea { 
+  width: 650px; 
+}
+
+#tr_copyAndPaste {
+  max-width: 185px; 
+}
+
+input[type="number"] {
+  max-width: 185px; 
+}
+
+.jslider { 
+  max-width: 200px; 
+}
+
+.well { 
+  padding: 12px; 
+  margin-bottom: 5px; 
+  max-width: 280px; 
+}
+
+.span4 { 
+  max-width: 280px; 
+}
+
+.popover { 
+  width: 600px; 
+  position: relative; top: -75px !important; 
+  left: 320px !important; 
+}
+
+.modal { 
+  /*width: 1000px; */
+  width: 800px; 
+  left: 600px; 
+}
+
+.modal-body {
+  height: 100%;
+  max-height:500px;
+}
+
+#columns { 
+  height: 200px; 
+  margin-bottom: 35px;
+}
+
+#dv_select, #expl_select, #tr_rename, #tr_recode, #tr_transform{ 
+  max-width: 185px; 
+}
+
+#view_order { 
+  max-width: 135px; 
+  display: inline;
+}
+
+#view_order_desc { 
+  vertical-align: top; 
+}
+
+#downloadData { 
+  vertical-align: top; 
+  height: 18.5px; 
+  width: 70px;
+}
+
+#Download_vis_plot,#Download_cluster_plot,#Download_pca_plot,#Download_opls_plot{ 
+	
+	vertical-align: top; 
+	margin-left:20px;
+	margin-right:auto;
+	width:70%;
+	background-color:#E0E0E0  ;/*#b0e0e6;*/
+	height: 18.5px; 
+	/*width: 70px;*/
+	color: #36648B;
+	font-size:125%;
+}
+
+
+#viz_plot_width, #viz_plot_height, #pmap_scaling, #pmap_fontsz , #variable_size_min, #variable_size_max { 
+  max-width: 60px; 
+}
+
+#fac_cutoff { 
+  max-width: 60px; 
+}
+
+#fac_condFormat { 
+  vertical-align: middle; 
+}

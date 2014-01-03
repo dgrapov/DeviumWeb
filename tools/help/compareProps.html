@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Example</title>
+
+
+
+
+
+<style type="text/css">
+
+</style>
+
+
+
+</head>
+
+<body>
+<p>The compare proportions X-squared-test is used to compare the proportion of a variable for one sample in our data to the proportion of the same variable in one, or more, other samples. </p>
+
+<p>This is important since we seldom have access to data for an entire population. The hypothesized value in the population is specified in the &#39;Comparsion value&#39; box. </p>
+
+<p>We can perform either a one-tailed test (i.e., less than or greater than) or two-tailed test (see &#39;Alternative hypothesis&#39;). In marketing we often use one-tailed tests because we want to evaluate if the available data provide evidence that a variable or effect is larger (or smaller) in one sample than another.</p>
+
+<h4>Example</h4>
+
+<p>We have access to data from <a href="http://www.pewinternet.org/Shared-Content/Data-Sets/2012/December-2012--Facebook-%28omnibus%29.aspx">Pew Internet &amp; American Life Project</a> on people&#39;s Facebook habits and attitudes. We are interested in whether men and women have different habits and attitudes towards their use of Facebook. </p>
+
+<p>You can find the information on people&#39;s Facebook habits and attitudes in the <strong>facebook.rda</strong> dataset. The variable &#39;more.important&#39; in the dataset stands for people&#39;s responses to the question whether Facebook has become more important in people&#39;s life (see the <a href="http://www.pewinternet.org/%7E/media/Files/Data%20Sets/2012/Omnibus_Dec_2012_Quest.docx">questionnaire</a> for more information). Here 1 stands for &quot;MORE important&quot;. Another variable &#39;more.time&#39; asks whether the subject has spent more time on Facebook last year (1=More). And &#39;gender&#39; documents the subject&#39;s gender (Male or Female).</p>
+
+<p>Before we compare the proportions, we need to transform the dataset a little bit. </p>
+
+<p>1) Create a new variable &#39;fct.more.important&#39; by &#39;fct.more.important=factor(more.important==1)&#39;</p>
+
+<p><img src="figures/CompareProportionsTransform.png" alt="Compare proportions - Transform12"></p>
+
+<p>2) Create a new variable &#39;fct.more.time&#39; by &#39;fct.more.time=factor(more.time==1)&#39;</p>
+
+<p>We want to know the attitudes and habits of Facebook users so that we can better deliver our advertisements. Let&#39;s first see the attitudes. Our null-hypothesis is that the proportion of men and women who think Facebook is more important is equal. </p>
+
+<p><img src="figures/CompareProportionsSummary.png" alt="Compare proportions - summary"></p>
+
+<p>Because the p-value is smaller than the conventional level of significance (i.e. 0.05) we can reject the null hypothesis based on the available sample. The data suggest that different proportions of men and women think that Facebook has become more important for them.</p>
+
+<p>In addition to the numerical output provided in the Summary tab we can also evaluate the hypothesis visually (see Plots tab). The settings in the side-panel are the same as before. </p>
+
+<p><img src="figures/CompareProportionsPlots.png" alt="Compare proportions - plots"></p>
+
+<p>It seems that men and women have different attitudes towards Facebook. How about their actual habits? We now use &#39;more.time&#39; to test this. Our null-hypothesis is that the proportion of men and women who report that they have spent more time on Facebook last year is equal. </p>
+
+<p><img src="figures/CompareProportionsMoretime.png" alt="Compare proportions - moretime"></p>
+
+<p>Because the p-value is greater than the conventional level of significance (i.e. 0.05) we cannot reject the null hypothesis based on the available sample. The data suggest that the proportions of men and women who spent more time on Facebook last year seem to be similar.</p>
+
+</body>
+
+</html>
