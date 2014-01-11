@@ -4,9 +4,10 @@ libs <- c("shiny", "knitr", "Hmisc", "car", "tools", "gridExtra", "markdown", "R
           "arm", "plyr", "reshape2", "vegan", "ggplot2", "lubridate", "pander","wordcloud")
 
 #Devium Libs
-libs2 <- c("pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 
+libs2 <- c("RJSONIO","pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 
 	"gridExtra", "reshape2", "plyr", "markdown", "R.utils", "psych", "rela", "arm", "xts","fdrtool","pls",
-	"qvalue","pcaMethods") #bioc
+	"qvalue","pcaMethods","shiny") #having problems with R_fromJSON" not resolved from current namespace (RJSONIO)
+
 	
 libs<-unique(c(libs,libs2))	
 		
