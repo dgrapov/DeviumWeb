@@ -1,12 +1,4 @@
-Calculate the required sample size when the researcher is interested in calculating either a mean or a proportion from sample data.
 
-#### Example 1
-
-We would like to start an ISP and need to estimate the average Internet usage of households in one week for our business plan and model. How many households must we randomly select to be 95 percent sure that the sample mean is within 1 minute of the population mean . Assume that a previous survey of household usage has shown  = 6.95 minutes.
-
-Answer:
-
-Since we are interested in estimating the mean internet usage in the population of interest we select sample size calculation for a  Mean. In the screen shot below we entered 1 (minute) as the Acceptable error and 6.95 as the initial estimate of the Sample standard deviation. The Confidence level is 95% so we choose a z-value of 1.96.
 
 ![Example 1b](figures/sampleSize_ex1a.png)
 
