@@ -1,7 +1,7 @@
 
 #Radyant libs
 libs <- c("shiny", "knitr", "Hmisc", "car", "tools", "gridExtra", "markdown", "R.utils", "psych", "rela", 
-          "arm", "plyr", "reshape2", "vegan", "ggplot2", "lubridate", "pander","wordcloud")
+         "arm", "plyr", "reshape2", "vegan", "ggplot2", "lubridate", "pander","wordcloud")
 
 #Devium Libs
 # libs2 <- c("RJSONIO","pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 

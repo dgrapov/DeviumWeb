@@ -1,4 +1,4 @@
 library("shiny")
-runApp("C:\\Users\\D\\Dropbox\\Devium\\DeviumWeb")
+runApp("C:\\Users\\D\\Dropbox\\DeviumWeb")
 
-runGitHub("DeviumWeb", username = "dgrapov")
+shiny::runGitHub("DeviumWeb", username = "dgrapov")
