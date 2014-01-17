@@ -18,6 +18,12 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
  	library(shiny)
 	shiny::runApp('~/Desktop/DeviumWeb-master')
 
+### TODO
+
+- Update help files
+- Remove unused code
+
+
 ### License
 
 DeviumWeb is licensed under the [AGPLv3](http://www.tldrlegal.com/l/AGPL3). The help files are licensed under the creative commons attribution non-commercial license [CC-NC](http://www.tldrlegal.com/license/creative-commons-attribution-noncommercial-(cc-nc)). See the files listed below for additional details.
