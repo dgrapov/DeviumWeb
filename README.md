@@ -12,16 +12,18 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
 
 	# on windows
 	library(shiny)
-	shiny::runApp('~/../Desktop/DeviumWeb-master')
+	shiny::runApp('~/../Desktop/DeviumWeb-master/DeviumWeb-master')
 
  	# on mac
  	library(shiny)
-	shiny::runApp('~/Desktop/DeviumWeb-master')
+	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
 ### TODO
 
-- Update help files
-- Remove unused code
+- convert to R package to enable easier loading
+- add license file
+- update help files
+
 
 
 ### License
