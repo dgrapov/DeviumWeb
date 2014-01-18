@@ -24,6 +24,7 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
 - convert to R package to enable easier loading
 - add license file
 - update help files
+- add network modules
 
 
 
