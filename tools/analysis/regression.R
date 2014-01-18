@@ -1,5 +1,7 @@
+#(from radiant)
+
 ###############################
-# Correlation
+# Correlation (from radiant)
 ###############################
 
 output$cor_var <- renderUI({

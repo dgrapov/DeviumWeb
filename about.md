@@ -8,5 +8,5 @@ Built using [Shiny](http://www.rstudio.com/shiny/) by [Rstudio](http://www.rstud
 
 Code available on [GitHub](https://github.com/dgrapov/DeviumWeb)
 
-
+![Logo](figures/generic_logo.png)
 

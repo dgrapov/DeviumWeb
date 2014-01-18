@@ -257,7 +257,7 @@ output$dataviewer <- renderTable({
 ################################################################
 # Output controls for the Summary, Plots, and Extra tabs
 # The tabs are re-used for various tools. Depending on the tool
-# selected by the user the appropropriate analaysis function 
+# selected by the user the appropriate analysis function 
 # is called.
 # Naming conventions: The reactive function to be put in the
 # code block above must be of the same name as the tool
@@ -288,7 +288,7 @@ output$summary <- renderPrint({
 
 # Generate output for the plots tab
 output$plots <- renderPlot({
-
+	
 	# plotting could be expensive so only done when tab is being viewed
 	if(input$tool == 'dataview' || input$analysistabs != 'Plots') return()
 

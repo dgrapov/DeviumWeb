@@ -4,12 +4,12 @@ libs <- c("shiny", "knitr", "Hmisc", "car", "tools", "gridExtra", "markdown", "R
          "arm", "plyr", "reshape2", "vegan", "ggplot2", "lubridate", "pander","wordcloud")
 
 #Devium Libs
-# libs2 <- c("RJSONIO","pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 
-	# "gridExtra", "reshape2", "plyr", "markdown", "R.utils", "psych", "rela", "arm", "xts","fdrtool","pls",
-	# "qvalue","pcaMethods","shiny") #having problems with R_fromJSON" not resolved from current namespace (RJSONIO)
+libs2 <- c("RJSONIO","pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 
+	"gridExtra", "reshape2", "plyr", "markdown", "R.utils", "psych", "rela", "arm", "xts","fdrtool","pls",
+	"qvalue","pcaMethods","shiny") #having problems with R_fromJSON" not resolved from current namespace (RJSONIO) only for web launch?
 
 	
-# libs<-unique(c(libs,libs2))	
+libs<-unique(c(libs,libs2))	
 		
 #function to load from bioconductor
 #function to check for packages and attempt to download if not found

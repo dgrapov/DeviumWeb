@@ -1,6 +1,0 @@
-Test of Help files. 
-
-`r getwd()`
-!["test figure"](figures/test.png)
-
-

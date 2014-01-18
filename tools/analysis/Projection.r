@@ -92,7 +92,7 @@ ui_pca <- function() {
 		),	
 		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
 		br(),
-		helpModal('Single mean','singleMean',includeHTML("tools/help/singleMean.html"))
+		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
 	)
 }
 
@@ -122,6 +122,7 @@ pca <- reactive({
 	# c(pca.inputs,data)
 	pca.results<-values$pca.results<-devium.pca.calculate(pca.inputs,return="list",plot=F)
 	# return(pca.results)
+	
 	
 	# #save outputs 
 	isolate({

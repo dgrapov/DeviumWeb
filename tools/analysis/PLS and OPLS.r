@@ -12,8 +12,8 @@ namel<-function (vec){
 #UI
 output$opls_variables <- renderUI({
   vars <- varnames()
-	isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
- 	vars <- vars[isNum]	
+	# isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
+ 	# vars <- vars[isNum]	
   if(length(vars) == 0) return()
   if(!is.null(input$opls_y_var)){vars<-vars[!vars%in%input$opls_y_var]}
   selectInput(inputId = "opls_var", label = "X variables:", choices = vars, selected = names(vars), multiple = TRUE)
@@ -161,7 +161,7 @@ ui_opls <- function() {
 		),	
 		
 		br(),
- 		helpModal('Single mean','singleMean',includeHTML("tools/help/singleMean.html"))
+ 		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
 
@@ -183,6 +183,9 @@ opls <- reactive({
 	
 	# X/DATA
 	opls.data <- getdata()[,input$opls_var,drop=FALSE]
+	names<-dimnames(opls.data)
+	opls.data<-do.call("cbind",lapply(1:ncol(opls.data),function(i){fixln(opls.data[,i])})) # convert to numeric
+	dimnames(opls.data)<-names
 	scaled.data<-data.frame(prep(opls.data,center=input$opls_center,scale=input$opls_scaling))
 	
 	

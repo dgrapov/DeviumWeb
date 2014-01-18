@@ -31,7 +31,7 @@ ui_datasummary <- function() {
 	),
 	
  		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
- 		helpModal('Single mean','singleMean',includeHTML("tools/help/singleMean.html"))
+ 		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
 
@@ -176,7 +176,7 @@ ui_ttest <- function() {
 		actionButton("save_t_test_results", "Save results")		
   	),
  		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
- 		helpModal('Single mean','singleMean',includeHTML("tools/help/singleMean.html"))
+ 		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
 
@@ -250,7 +250,7 @@ ui_anova <- function() {
 		actionButton("save_anova_results", "Save results")	
   	),
  		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
- 		helpModal('Single mean','singleMean',includeHTML("tools/help/singleMean.html"))
+ 		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
 

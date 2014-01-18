@@ -22,16 +22,17 @@ if(Sys.getenv('SHINY_PORT') == "") {
 options(repos = c(CRAN = "http://cran.rstudio.com"))
 source('libs.R', local = TRUE)
 
-# available <- suppressWarnings(suppressPackageStartupMessages(sapply(libs, require, character.only=TRUE)))
-available <- suppressWarnings(sapply(libs, require, character.only=TRUE))
-inst.libs <- libs[available == FALSE]
-if(length(inst.libs) != 0) {
-  install.packages(inst.libs, dependencies = TRUE)
-	# suppressWarnings(suppressPackageStartupMessages(sapply(inst.libs, require, character.only=TRUE)))
-  suppressWarnings(sapply(inst.libs, require, character.only=TRUE))
-}
+# # available <- suppressWarnings(suppressPackageStartupMessages(sapply(libs, require, character.only=TRUE)))
+# available <- suppressWarnings(sapply(libs, require, character.only=TRUE))
+# inst.libs <- libs[available == FALSE]
+# if(length(inst.libs) != 0) {
+  # install.packages(inst.libs, dependencies = TRUE)
+	# # suppressWarnings(suppressPackageStartupMessages(sapply(inst.libs, require, character.only=TRUE)))
+  # suppressWarnings(sapply(inst.libs, require, character.only=TRUE))
+# }
 
-# check.get.packages(libs)
+#load all R packages
+check.get.packages(libs)
 
 
 panderOptions('digits',3)
@@ -68,7 +69,7 @@ returnOrder <- function(inputId, vars) {
 
 # unloading because it messes with method of some other packages
 # would prefer to use import From but ...
-#----!!!IMPORTANT !#--- may cause radyant probe=s
+#----!!!IMPORTANT !#--- may cause radyant problems
 # detach("package:Hmisc", unload=TRUE) # radyant problems with this
 #----------
 

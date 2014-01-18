@@ -1,8 +1,8 @@
-Show the data available in the Radyant app in a table format. 
+Show the data available in the Devium app in a table format. 
 
 #### Datasets
 
-Choose one of the datasets from the drop-down menu that were loaded into Radyant through the Manage tab.
+Choose one of the datasets from the drop-down menu that were loaded into Devium through the Manage tab.
 
 #### Select columns
 

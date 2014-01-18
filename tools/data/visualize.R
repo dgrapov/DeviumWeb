@@ -114,21 +114,22 @@ make.ggplot<-function() {
 		}
 		
 		if(type=="bar_plot"){
-			tmp.obj<-data.frame(.index=c(1:nrow(tmp.data)),tmp.data)
+			tmp.obj<-data.frame(.index=c(1:nrow(tmp.data)),labels=rownames(plot.obj$data),tmp.data)
 			if(plot.obj$sort_bar_plot==TRUE){	
-					tmp.obj<-tmp.obj[order(tmp.data$xvar,decreasing=TRUE),]
-					tmp.obj$.index<-c(1:nrow(tmp.data))
-				}
+					# tmp.obj<-tmp.obj[order(tmp.data$xvar,decreasing=TRUE),]
+					# tmp.obj$.index<-c(1:nrow(tmp.data))
+					 tmp.obj$labels <- factor(fixlc(tmp.obj$labels),levels=fixlc(tmp.obj$labels)[order(tmp.obj$xvar,decreasing=TRUE)])
+				} else {bar_sort<-NULL}
 			p<-ggplot(tmp.obj, 
 					aes(
-						x 		= .index,
+						x 		= labels,
 						y 		= xvar,
 						fill 	= as.factor(group)#,
 						# group 	= as.factor(group),
 						# color 	= as.factor(plot.obj$group)
 						)
-					) + plot.type 
-			if(plot.obj$verticle_bar_plot==TRUE){ p<-p+coord_flip()	}
+					) + plot.type
+			if(plot.obj$verticle_bar_plot==TRUE){ p<-p+coord_flip()	} else (p<-p + theme(axis.text.x = element_text(angle = 90, hjust = 1)))
 		}
 	
 		if(type=="scatter_plot"){
@@ -154,7 +155,7 @@ make.ggplot<-function() {
 		if(type=="bar_plot"){
 			labels<-labs(
 					fill 	= input$group_var,
-					x 		= "index",
+					x 		= "",
 					y 		= input$x_var
 				)  
 		} 

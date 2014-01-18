@@ -23,6 +23,7 @@ shinyUI(
     ),
 
     mainPanel(
+	
       conditionalPanel(condition = "input.datasets != ''",
         conditionalPanel(condition = "input.tool == 'data'", 
           uiOutput("ui_data_tabs")
