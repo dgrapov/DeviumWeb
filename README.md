@@ -1,6 +1,7 @@
 DeviumWeb
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
+![logo](devium_logo.png)
 
 ### Install DeviumWeb
 
