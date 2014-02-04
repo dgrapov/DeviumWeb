@@ -1,6 +1,16 @@
 #power analysis fxns
-check.get.packages("pwr")
+# check.get.packages("pwr")
 
+#anova and t-test power very different for 2 classes?
+# n<-32
+# effect<-.4
+# alpha<-.05
+
+# pwr.t.test(n = n, d = effect, sig.level = alpha, power = NULL, type = "two.sample")
+# pwr.anova.test(f=effect,k=2,n=n,sig.level=alpha,power=NULL)
+
+# pwr.t.test(n = n, d = effect, sig.level = NULL, power = .8, type = "two.sample")
+# pwr.anova.test(f=effect,k=3,n=n,sig.level=NULL,power=.8)
 
 # # # for debugging overwrites all summary outputs
 # output$summary<- renderPrint({
@@ -133,7 +143,7 @@ poweranalysis <- reactive({
 			#t-test
 			type <- input$power_t_test_type
 			result<-tryCatch(pwr.t.test(n = n, d = effect, sig.level = alpha, power = power, type = type),error = function(e) {NULL})
-			out<-tryCatch(data.frame(sample.size=round(result$n,0),effect.size = result$d, alpha = result$sig.level, power = result$power),
+			out<-tryCatch(data.frame(samples.per.group=round(result$n,0),effect.size = result$d, alpha = result$sig.level, power = result$power),
 				error = function(e) {"Could not be calculated."})
 		}
 		

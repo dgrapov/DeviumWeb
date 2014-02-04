@@ -12,8 +12,8 @@ namel<-function (vec){
 #UI
 output$pca_variables <- renderUI({
   vars <- varnames()
-	isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
- 	vars <- vars[isNum]
+	# isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
+ 	# vars <- vars[isNum]
   if(length(vars) == 0) return()
   # selectInput(inputId = "pca_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE)
   selectInput(inputId = "pca_var", label = "Variables:", choices = vars, multiple = TRUE)
@@ -46,10 +46,10 @@ output$pca_y_axis<-renderUI({
 ui_pca <- function() {
 	list(
 		wellPanel(
-		conditionalPanel(condition = "input.analysistabs=='Plots'",downloadButton('Download_pca_plot', label = "Download plot")),
-			br(),
+		# conditionalPanel(condition = "input.analysistabs=='Plots'",downloadButton('Download_pca_plot', label = "Download plot")),
+			# br(),
 			h4('Calculate'),
-			tags$details(tags$summary("Options"),
+			tags$details(open="open",tags$summary("Options"),
 				uiOutput("pca_variables"), # variables
 				uiOutput("PCs"),
 				checkboxInput("pca_center","Center",TRUE),
@@ -86,13 +86,18 @@ ui_pca <- function() {
 							checkboxInput("pca_show_labels","Show",TRUE),
 							numericInput("pca_label_font_size", "Size:", value=5, min = 0,step=1),
 							textInput("pca_legend_label", "Legend title", value = "auto")	
-						)		
-				)
+						)	
+				),
+			tags$details(tags$summary("More options"),
+						br(),
+							downloadButton('Download_pca_plot', label = "Download plot")
+						)	
 			)
-		),	
+		)#,
+		#adding modal alters the markup rendering	
 		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
-		br(),
-		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
+		# br(),
+		# helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
 	)
 }
 
@@ -110,10 +115,11 @@ pca <- reactive({
 
 	# return("nothing to see")
 	pca.data <- getdata()[,input$pca_var,drop=FALSE]
+	#get factors to add to sample meta for output
 	
 	# adapted from another devium
 	pca.inputs<-list()
-	pca.inputs$pca.data<-pca.data
+	pca.inputs$pca.data<-afixln(pca.data) # convert everything to numeric
 	pca.inputs$pca.algorithm<-input$pca_method
 	pca.inputs$pca.components<-input$pca_pcs
 	pca.inputs$pca.center<-input$pca_center
@@ -124,19 +130,25 @@ pca <- reactive({
 	# return(pca.results)
 	
 	
-	# #save outputs 
+	# #save outputs #should add button to trigger
 	isolate({
 		name<-paste0(input$datasets,"_PCA_sample_info")
 		#add index, and Y for visualizations
+		#bind with any factors in the data
+		
 		diagnostics<-data.frame(values$pca.results$pca.diagnostics)
 		tmp.obj<-data.frame(index=c(1:nrow(values$pca.results$pca.scores)),scores=values$pca.results$pca.scores,diagnostics)
+		meta<-fixlr(getdata(),.remove=F)
+		tmp.obj<-data.frame(meta,tmp.obj)
+		# rownames(tmp.obj)<-rownames(get(input$datasets))
+		rownames(tmp.obj)<-rownames(getdata())
 		values[[name]]<-tmp.obj
 		values$datasetlist <- unique(c(values$datasetlist,name))
 	})
 	
 	isolate({
 		name<-paste0(input$datasets,"_PCA_variable_info")
-		#add index, and Y for visualizations
+		#add index, and Y for visualizations #should use expression set type object and carry around row an col meta in extra items
 		tmp.obj<-data.frame(index=c(1:nrow(values$pca.results$pca.loadings)),loadings=values$pca.results$pca.loadings)
 		values[[name]]<-tmp.obj
 		values$datasetlist <- unique(c(values$datasetlist,name))

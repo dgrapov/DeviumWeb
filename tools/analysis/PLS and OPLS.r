@@ -9,6 +9,7 @@ namel<-function (vec){
 		tmp
 	}
 
+	
 #UI
 output$opls_variables <- renderUI({
   vars <- varnames()
@@ -90,35 +91,22 @@ ui_opls <- function() {
 			# checkboxInput("opls_feature_selection","Identify top predictors?",FALSE),
 			#options
 			selectInput("opls_feature_selection_type","Selection type:",list(none="none",quantile = "quantile",number = "number"),selected="none",multiple=FALSE),
-			conditionalPanel(condition = "input.opls_feature_selection_type == 'quantile'",
-				numericInput("opls_feature_selection_type_value_quant", "Top percent", value=10, min = 0,max=100,step=5)
-			),
-			conditionalPanel(condition = "input.opls_feature_selection_type == 'number'",
-				numericInput("opls_feature_selection_type_value_rank", "Top number", value=2, min = 1,step=1)
-			),
+			numericInput("opls_feature_selection_type_value", "Top percent", value=10, min = 0,max=100,step=5),
+			# conditionalPanel(condition = "input.opls_feature_selection_type == 'quantile'",
+				# numericInput("opls_feature_selection_type_value_quant", "Top percent", value=10, min = 0,max=100,step=5)
+			# ),
+			# conditionalPanel(condition = "input.opls_feature_selection_type == 'number'",
+				# numericInput("opls_feature_selection_type_value_rank", "Top number", value=2, min = 1,step=1)
+			# ),
 			# h5('Correlation with Scores'),
 			conditionalPanel(condition = "input.opls_feature_selection_type != 'none'",
+			selectInput("opls_feature_selection_feature_weight","Weight:",list("loading","coefficient","VIP"),selected="loading",multiple=FALSE),
 			selectInput("opls_feature_selection_cor_type","Type:",list("spearman","pearson","biweight"),selected="spearman",multiple=FALSE),
 			numericInput("opls_feature_selection_p_val", "p-value:", value=0.05, min = 0,max=1,step=0.005),
 			checkboxInput("opls_feature_selection_FDR","FDR",TRUE),
 			checkboxInput("opls_feature_selection_separate","separate signs",FALSE)
 			)
 		),
-		# h4('Plot'),
-		# tags$details(tags$summary("Options"),
-		# selectInput("opls_plot","Plot type",
-					# list ("RMSEP" 	= "RMSEP",
-					# "Scores" 		= "scores", 
-					# "Loadings" 		= "loadings",
-					# "Biplot" 		= "biplot",
-					# "multi-RMSEP" 	= "osc.RMSEP",
-					# "multi-Scores" 	= "osc.scores")#,
-					# # "multi-Loadings"= "osc.loadings",
-					# # "multi-Weights" = "osc.delta.weights")
-			# ),
-			# conditionalPanel(condition = "input.opls_plot != 'RMSEP'&input.opls_plot != 'osc.RMSEP'",list(uiOutput("opls_x_axis"),uiOutput("opls_y_axis"))),
-			# conditionalPanel(condition = "input.opls_plot == 'scores'|input.opls_plot == 'biplot'|input.opls_plot == 'osc.scores'",list(uiOutput("opls_groups")))
-		# )
 		h4('Plot'),
 			tags$details(tags$summary("Options"),	
 				selectInput("opls_plot","Plot type",
@@ -158,12 +146,26 @@ ui_opls <- function() {
 						)		
 				)
 			)
-		),	
-		
-		br(),
- 		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
+		)#,	
+		# with modal included the header size tags (e.g. h4, h5) are not interpreted?
+		# br(),
+ 		# helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
+
+#update plot options based on chosen inputs
+observe({
+	tmp<-list ("RMSEP" 	= "RMSEP",
+					"Scores" 		= "scores", 
+					"Loadings" 		= "loadings",
+					"Biplot" 		= "biplot",
+					"multi-RMSEP" 	= "osc.RMSEP",
+					"multi-Scores" 	= "osc.scores")
+	if(!is.null(input$opls_feature_selection_type))	{			
+		if(!input$opls_feature_selection_type=="none")	{tmp<-c(tmp,"feature selection"="feature selection")}		
+	}
+	updateSelectInput(session, "opls_plot", choices=tmp)
+})	
 
 summary.opls <- function(result) {
 	result
@@ -236,35 +238,40 @@ opls <- reactive({
 	# values[[name]]<-tmp.obj
 		
 	#feature selection
+	#---------------------------
 	# if(input$opls_feature_selection){
 	if(!input$opls_feature_selection_type == "none"){
 	#modify inputs based on GUI
 
 	if(input$opls_feature_selection_type=="quantile"){
-			top<-input$opls_feature_selection_type_value_quant/100
-			return.max<-floor(ncol(scaled.data)*top) # ceiling likely inside feat selection alg
+			top<-1-input$opls_feature_selection_type_value/100
 			if(input$opls_feature_selection_separate){top<-top/2}
-			
+			# return.max<-ceiling(ncol(scaled.data)*top)
 		} else {
-			top<-input$opls_feature_selection_type_value_rank # c
+			top<-input$opls_feature_selection_type_value # c
 			# if(input$opls_feature_selection_separate){top<-ceiling(top/2)}
 			if(top>ncol(scaled.data)) {top<-ncol(scaled.data)}
-			return.max<-top
+			# return.max<-top
 		}
+		
 		.scores<-values$final.opls.results$scores[,]
-		.loadings<-values$final.opls.results$loadings[,]	
-		selected.features<-values$opls.selected.features<-PLS.feature.select(pls.data=scaled.data,pls.scores=.scores[,1],pls.loadings=.loadings[,1],pls.weight=.loadings[,1],
+		.loadings<-switch(input$opls_feature_selection_feature_weight,
+							"loading"=values$final.opls.results$loadings[,][,1],
+							"coefficient" = values$final.opls.results$coefficients[,ncol(values$final.opls.results$coefficients)],
+							"VIP" = matrix(values$final.opls.results$VIP)[,1]) 
+		selected.features<-values$opls.selected.features<-PLS.feature.select(pls.data=scaled.data,pls.scores=.scores[,1],pls.loadings=.loadings,pls.weight=.loadings,
 					p.value=input$opls_feature_selection_p_val, FDR=input$opls_feature_selection_FDR,
 					cut.type=input$opls_feature_selection_type,top=top,
 					separate=input$opls_feature_selection_separate,type=input$opls_feature_selection_cor_type,make.plot=FALSE)
+							
 		#method description			
 		feat.decription<-data.frame(options=t(feat.decription<-data.frame(p.value=input$opls_feature_selection_p_val, FDR=input$opls_feature_selection_FDR,
 					cut.type=input$opls_feature_selection_type,top=top,
 					separate=input$opls_feature_selection_separate,type=input$opls_feature_selection_cor_type)))
 					
 		#selected objects
-		tmp<-selected.features[selected.features$combined.selection==TRUE,"loadings",drop=FALSE]
-		tmp<-tmp[order(abs(tmp$loadings),decreasing=TRUE),,drop=FALSE][1:return.max,,drop=FALSE]		
+		tmp<-selected.features[selected.features$combined.selection==TRUE,1,drop=FALSE] # weight
+		# tmp<-tmp[order(abs(tmp$loadings),decreasing=TRUE),,drop=FALSE][1:return.max,,drop=FALSE]		
 		summary.selected.features<-list(tmp,feat.decription)
 		
 		#need a mechanism to save feature selected data as a separate data set
@@ -349,20 +356,36 @@ opls <- reactive({
 		#add index, and Y for visualizations
 		info<-data.frame(index=c(1:nrow(values$final.opls.results$y[[1]])),values$final.opls.results$y[[1]])
 		tmp.obj<-data.frame(info,scores=values$final.opls.results$scores[,],fitted.values=values$final.opls.results$fitted.values[,],residuals=values$final.opls.results$residuals[,])
+		#add meta data and rownames
+		meta<-fixlr(getdata(),.remove=F)
+		tmp.obj<-data.frame(names=rownames(values$final.opls.results$scores),meta,tmp.obj)
 		values[[name]]<-tmp.obj
 		values$datasetlist <- unique(c(values$datasetlist,name))
 	})
 	# #loadings, coefficients, VIP, etc
 	isolate({
 		name<-paste0(input$datasets,"_OPLS_variable_info")
-		tmp.obj<-data.frame(loadings=values$final.opls.results$loadings[,],coefficients=values$final.opls.results$coefficients[,])
+		tmp.obj<-data.frame(index=c(1:nrow(values$final.opls.results$loadings)),names=rownames(values$final.opls.results$loadings),loadings=values$final.opls.results$loadings[,],coefficients=values$final.opls.results$coefficients)
 		tmp.obj$VIP<-values$final.opls.results$VIP[,] # may not exist
+		tmp.obj$names<-rownames(values$final.opls.results$loadings)
 		values[[name]]<-tmp.obj
 		values$datasetlist <- unique(c(values$datasetlist,name))
 	})
 	
 	return(list(description=mod.description,statistics = opls.model.text,"Validated Model Performance"=int.test.perf,selected.features=summary.selected.features))
 	
+})
+
+#change GUI based on inputs
+#change input$opls_feature_selection_type_value_quant based on input$opls_feature_selection_type value
+observe({
+	if(is.null(input$opls_feature_selection_type)) return()
+	if(input$opls_feature_selection_type=="number"){
+		updateNumericInput(session,"opls_feature_selection_type_value", "Top number",min=1,step=5)
+	}
+	if(input$opls_feature_selection_type=="quantile"){
+		updateNumericInput(session,"opls_feature_selection_type_value", "Top percent",min=0,max=100,step=5,value=10)
+	}
 })
 
 plot.opls <- function(result) {
@@ -377,22 +400,25 @@ plot.opls <- function(result) {
 		colnames(color)<-cnames
 	} 
 	
-	#create plots
+	if(input$opls_plot=="feature selection"){ #
+		opts<-values$opls.selected.features
+		plot.S.plot(opts)
+	} 
+	
+	#create non feature
 	OSC.plots<-length(agrep("osc.",input$opls_plot))==1
 	if(OSC.plots){ 
-			opls_plot<-gsub("osc.","",input$opls_plot)
-			plot.OSC.results(values$opls.results,plot=opls_plot,groups=color)
-		} else {
+		opls_plot<-gsub("osc.","",input$opls_plot)
+		plot.OSC.results(values$opls.results,plot=opls_plot,groups=color)
+	} 
 			
-			if(input$opls_legend_label=="auto"){ legend.name=NULL }else {legend.name<-input$opls_legend_label }
-			plot.PLS(obj=values$final.opls.results,xaxis=input$opls_x_axis,yaxis=input$opls_y_axis, results = input$opls_plot,
-			group.bounds=input$opls_group_bounds,size=input$opls_size,color=color, label=input$opls_show_labels, 
-			legend.name =  legend.name,font.size=input$opls_label_font_size,alpha=input$opls_point_alpha,g.alpha=input$opls_group_alpha)
-		
-		
-			# plot.PLS(obj=values$final.opls.results,plot=input$opls_plot,groups=color)
-		}
-
+	if(input$opls_plot%in%c("RMSEP","scores","loadings","biplot")){
+		if(input$opls_legend_label=="auto"){ legend.name=NULL }else {legend.name<-input$opls_legend_label }
+		plot.PLS(obj=values$final.opls.results,xaxis=input$opls_x_axis,yaxis=input$opls_y_axis, results = input$opls_plot,
+		group.bounds=input$opls_group_bounds,size=input$opls_size,color=color, label=input$opls_show_labels, 
+		legend.name =  legend.name,font.size=input$opls_label_font_size,alpha=input$opls_point_alpha,g.alpha=input$opls_group_alpha)
+	}		
+	
 }
 
 #save plot

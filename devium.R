@@ -11,7 +11,7 @@ output$debug<- renderPrint({
 	return(list(input = input.obj,values = values.obj))
 })
 
-#helper for data transposing mechanism
+#helper for data transposing mechanism, which was a horrible idea!
 rdy.t<-function(obj){
   list<-dimnames(obj)
   names<-lapply(seq(list), function(i){

@@ -1,6 +1,11 @@
 ###############################
 # Data summary
 ###############################
+#fix:
+# output for 1 row, 
+# control of formatted choices
+# colnames export
+
 output$summary_groups<-renderUI({
 vars <- varnames()
 	isNum <- !"numeric" == getdata_class() & !"integer" == getdata_class()

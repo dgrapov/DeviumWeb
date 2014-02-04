@@ -12,6 +12,7 @@ output$cor_var <- renderUI({
 
 ui_correlation <- function() {
   list(wellPanel(
+	h4('Correlation'),
 	    uiOutput("cor_var"),
 		  selectInput(inputId = "cor_type", label = "Method", choices = c("pearson", "spearman"), selected = "pearson"),
      	numericInput("cor_cutoff", label = "Correlation cutoff:", min = 0, max = 1, value = 0, step = .05)

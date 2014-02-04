@@ -1,4 +1,7 @@
 
+#fix:
+# add ability to resize plots
+
 #tests
 test<-function(){
 data(mtcars)
@@ -38,7 +41,8 @@ output$hc_vars <- renderUI({
 # annotation variable selection - hclustering
 output$hc_group_vars <- renderUI({
 
-	tmp.data <- getdata2()[,input$hc_vars,drop=FALSE]
+	# tmp.data <- getdata2()[,input$hc_vars,drop=FALSE]
+	tmp.data <- getdata2()
 	if(is.null(tmp.data)) {return()}
 	
     colnames(tmp.data)<-check.fix.names(colnames(tmp.data),ok.chars=c(".","_") )
@@ -112,8 +116,8 @@ hc_dist_method <-  c("none","euclidean", "maximum", "manhattan", "canberra", "bi
 ui_hclustering <- function() {
   list(
 	  wellPanel(
-		conditionalPanel(condition = "input.analysistabs=='Plots'",downloadButton('Download_cluster_plot', label = "Download plot")),
-		br(),
+		# conditionalPanel(condition = "input.analysistabs=='Plots'",downloadButton('Download_cluster_plot', label = "Download plot")),
+		# br(),
 			h4("Data"),
 			tags$details(open="open", tags$summary("Options"),	
 				radioButtons("dimention","Dimension:", list("rows" = 1,"columns" = 2), selected = "rows"),
@@ -134,7 +138,7 @@ ui_hclustering <- function() {
 		),
 		wellPanel(
 			h4("Plot"),
-			tags$details(tags$summary("Options"),
+			tags$details(tags$summary("Type"),
 				radioButtons(inputId = "hclustering_plot_heatmap", label = "Plot type:", choices = c("heatmap","dendrogram"), selected = "heatmap"),
 				conditionalPanel(condition = "input.dimention=='1'",
 					uiOutput("hc_group_vars")
@@ -146,7 +150,11 @@ ui_hclustering <- function() {
 				selectInput("low_col","low", color.opts(), selected = "green" ),
 				selectInput("mid_col","mid", color.opts(), selected = "black"),
 				selectInput("high_col","high", color.opts(),selected = "red")
-			)
+			),
+		tags$details(tags$summary("More options"),
+			br(),
+			downloadButton('Download_cluster_plot', label = "Download plot")
+			)	
 		)#,
 		# wellPanel(
 			# tags$details(tags$summary("More options"),
@@ -232,7 +240,7 @@ summary.hclustering <- function(result) {
 		variable.cluster.info = values$col_hc_clusters) #, edge.list = hc_edge.list
 }
 
-# place all reactives inside here the result is sent to plots or summaries
+# place all reactive inside here the result is sent to plots or summaries
 hclustering<-reactive({ # clustering output
 	tmp<-list() # collect args to pass to plot
 	#dimension
@@ -243,13 +251,13 @@ hclustering<-reactive({ # clustering output
     colnames(tmp.data)<-check.fix.names(colnames(tmp.data),ok.chars=c(".","_") )
     rownames(tmp.data)<-check.fix.names(rownames(tmp.data),ok.chars=c(".","_") )
     fct.id<-sapply(seq(tmp.data), function(i){is.factor(tmp.data[,i])})
-	tmp.vars<-tmp.data # save annotation
-    tmp.data<-tmp.data[,!fct.id, drop=F]
+	tmp.vars<-getdata2() # save annotation
+    # tmp.data<-tmp.data[,!fct.id, drop=F] # remove factors, convert to numeric instead
     
     # if(input$dimention=="1"){
       # tmp.data<-data.frame(t(data.frame(tmp.data)))
     # } 
-    tmp$data<-tmp.data
+    tmp$data<-afixln(tmp.data) #make all numeric
 	
 	#top row(s) annotation
 	if(input$hc_group_vars=="none"){
@@ -340,9 +348,9 @@ hclustering_results <- reactive({ # doing the clustering
 #storage for variable clusters
 var.clusters<-function(){
 	if(is.null(values$col_hc_clusters)) {
-		tmp.data <-getdata2() #remove factors
-		fct.id<-!sapply(seq(tmp.data), function(i){is.factor(tmp.data[,i])})
-		values$col_hc_clusters<-data.frame(id=matrix(c(1:sum(fct.id)),ncol=1))
+		# tmp.data <-getdata2() #remove factors
+		# fct.id<-!sapply(seq(tmp.data), function(i){is.factor(tmp.data[,i])})
+		# values$col_hc_clusters<-data.frame(id=matrix(c(1:sum(fct.id)),ncol=1))
 	} else {
 		values$col_hc_clusters
 	}
@@ -353,23 +361,33 @@ observe({ # adding cluster membership to the data
 	isolate({
 		tmp<-hclustering()
 		if(tmp$cluster.method =="none" | tmp$cluster.method == "none") return()
-		clusmem <- cutree(hclustering_results(), k = as.numeric(input$hc_nrClus))
+		clusmem <- tryCatch(cutree(hclustering_results(), k = as.numeric(input$hc_nrClus)), error=function(e){rep("error",length(hclustering_results()$order))})
 		
-		# data transpose should be handled centrally and only items should be bound as columns
-		# for now don't allow adding rows (else prepare for $hit storm)
+		# data transpose should be handled centrally and only items should be bound as columns (need to redo whole design!)
+		# 
 		if(tmp$match.dim == 1 ) {
-			changedata(data.frame(as.matrix(as.factor(clusmem))), paste("hclus",input$hc_nrClus,sep=""))
+			#bind with data 
+				changedata(data.frame(as.matrix(as.factor(clusmem))), paste("hclus",input$hc_nrClus,sep=""))
+			
 		} else {
-			 # save variable info but don't bind with data
-				addColName<-paste("hclus",input$hc_nrClus,sep="")
-				tmp<-var.clusters()
-				var.clus.info<-data.frame(do.call("cbind",values$col_hc_clusters))
-				tmp.data <-getdata2() #remove factors
-				fct.id<-!sapply(seq(tmp.data), function(i){is.factor(tmp.data[,i])})
-				var.clus.info[,1]<-colnames(tmp.data)[fct.id]
-				var.clus.info[,addColName]<-clusmem
-				values$variable_heirarchical_clusters<-values$col_hc_clusters<-var.clus.info
-				values$datasetlist <- unique(c(values$datasetlist,"variable_heirarchical_clusters"))
+			name<-paste0(input$datasets,"_HCA_variable_info")
+			clus.name<-paste("hclus",input$hc_nrClus,sep="")
+			assign(clus.name,as.factor(clusmem))
+			tmp<-values$clustering.results.object$data
+			id<-na.omit(match(colnames(getdata()),colnames(tmp)))
+			tmp.obj<-values$col_hc_clusters<-data.frame(index=id,names=colnames(tmp),clusmem)
+			values[[name]]<-tmp.obj
+			values$datasetlist <- unique(c(values$datasetlist,name))
+			 # # save variable info but don't bind with data
+				# addColName<-paste("hclus",input$hc_nrClus,sep="")
+				# tmp<-var.clusters()
+				# var.clus.info<-data.frame(do.call("cbind",values$col_hc_clusters))
+				# tmp.data <-getdata2() #remove factors
+				# fct.id<-!sapply(seq(tmp.data), function(i){is.factor(tmp.data[,i])})
+				# var.clus.info[,1]<-colnames(tmp.data)[fct.id]
+				# var.clus.info[,addColName]<-clusmem
+				# values$variable_heirarchical_clusters<-values$col_hc_clusters<-var.clus.info
+				# values$datasetlist <- unique(c(values$datasetlist,"variable_heirarchical_clusters"))
 			
 		}
 		
@@ -380,7 +398,7 @@ observe({ # adding cluster membership to the data
 
 
 
-#------------------------------------ from radyant
+#------------------------------------ from radiant currently disabled
 # K-means objects
 #--------------------------
 #additional controls for plots
