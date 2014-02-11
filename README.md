@@ -19,13 +19,16 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
  	library(shiny)
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
+### Version
+
+0.1.0 (2/10/14)
+- first stable alpha release
+
 ### TODO
 
 - convert to R package to enable easier loading
-- add license file
-- update help files
+- add help files
 - add network modules
-
 
 
 ### License
