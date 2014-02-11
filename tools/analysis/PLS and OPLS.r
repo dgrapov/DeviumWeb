@@ -66,8 +66,8 @@ ui_opls <- function() {
 		br(),
 		h4('Calculate'),
 		tags$details(tags$summary("Model"),
+		uiOutput("opls_yvariables"), # Y works best for single y
 		uiOutput("opls_variables"), # variables
-		uiOutput("opls_yvariables"),
 		uiOutput("opls_pcs"),
 		uiOutput("opls_opcs"),
 		checkboxInput("opls_center","Center",TRUE),
@@ -80,7 +80,7 @@ ui_opls <- function() {
 			checkboxInput("opls_permutation","Permutation testing?",TRUE),
 			checkboxInput("opls_internal_testing","Internal training/testing?",TRUE),
 			conditionalPanel(condition = "input.opls_internal_testing",
-				selectInput("opls_internal_testing_var","Training/testing index",as.list(c("random","duplex",varnames())),selected="duplex")
+				selectInput("opls_internal_testing_var","Training/testing index",as.list(c("random",varnames())),selected="random")
 			),
 			checkboxInput("opls_external_testing","External training/testing?",TRUE),
 			conditionalPanel(condition = "input.opls_external_testing",
@@ -145,8 +145,13 @@ ui_opls <- function() {
 							textInput("opls_legend_label", "Legend title", value = "auto")	
 						)		
 				)
+			),	
+		h4('Save'),
+			tags$details(tags$summary("Objects"),
+				selectInput("opls_result_obj","",choices=c("-----" = ""),selected = "-----",multiple=TRUE),#,values[["opls_objects"]]$return_obj_name),
+				actionButton("save_opls_result_obj", "Save")
 			)
-		)#,	
+		)
 		# with modal included the header size tags (e.g. h4, h5) are not interpreted?
 		# br(),
  		# helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
@@ -172,7 +177,10 @@ summary.opls <- function(result) {
 }
 
 opls <- reactive({
-
+	
+	if(is.null(input$datasets)) return()
+	opls_result_objects<-list() # store names of values to return
+	
 	ret_text <- "This analysis requires >2 variables to be of type numeric or integer and no missing values in the data. Please select another dataset."
 	if(is.null(input$opls_y_var)) return("Please select Y variable(s).")
 	if(is.null(input$opls_var)) return(ret_text)
@@ -180,26 +188,27 @@ opls <- reactive({
 	
 	# Y
 	y<- getdata()[,input$opls_y_var,drop=FALSE]
-	pls.y<-do.call("cbind",lapply(1:ncol(y),function(i){fixln(y[,i])})) # convert to numeric
+	#check for factors and convert to numeric
+	pls.y<-do.call("cbind",lapply(1:ncol(y),function(i){as.numeric(y[,i])})) # convert to numeric
 	colnames(pls.y)<-colnames(y)
 	
 	# X/DATA
 	opls.data <- getdata()[,input$opls_var,drop=FALSE]
 	names<-dimnames(opls.data)
-	opls.data<-do.call("cbind",lapply(1:ncol(opls.data),function(i){fixln(opls.data[,i])})) # convert to numeric
+	opls.data<-do.call("cbind",lapply(1:ncol(opls.data),function(i){as.numeric(opls.data[,i])})) # convert to numeric
 	dimnames(opls.data)<-names
 	scaled.data<-data.frame(prep(opls.data,center=input$opls_center,scale=input$opls_scaling))
 	
 	
 	# group
-	if(input$opls_groups=="none"){opls_groups<-NULL } else {opls_groups<-input$opls_groups}
+	if(is.null(input$opls_groups)||input$opls_groups=="none"){opls_groups<-NULL } else {opls_groups<-input$opls_groups}
 	opls.group<-getdata()[,opls_groups,drop=FALSE]
 	# training testing index
 	
 	#should CV folds be normalized separately (only works for uv and centred)?
 	if(input$opls_validation=="uv"&!input$opls_validation=="none"){cv.scale<-TRUE} else {cv.scale<-FALSE}
 	
-	#make model
+	#make model (should store results in a common object)
 	opls.results<-values$opls.results<-make.OSC.PLS.model(pls.y,pls.data=scaled.data,
 						comp=input$opls_pcs,
 						OSC.comp=input$opls_o_pcs, 
@@ -222,20 +231,6 @@ opls <- reactive({
 	opls.model.text<-data.frame("Xvar"=c(0,round(cumsum(values$final.opls.results$Xvar)*100,2)),"Q2"=values$final.opls.results$Q2,"RMSEP"= values$final.opls.results$RMSEP)	
 	rownames(opls.model.text)<-c("intercept",paste0("LV ",1:input$opls_pcs))
 	
-	#collect model outputs for return or plotting
-	# #--------------------------------------------
-	# #scores, fitted values, residual, etc
-	# name<-paste0(input$datasets,"_opls_sample_info")
-	# tmp.obj<-data.frame(values$final.opls.results$scores[,],values$final.opls.results$fitted.values[,],values$final.opls.results$residuals[,])
-	# values[[name]]<-tmp.obj
-	# values$datasetlist <- c(values$datasetlist,name)
-	
-	# #loadings, coefficients, VIP, etc
-	# name<-paste0(input$datasets,"_opls_variable_info")
-	# values$datasetlist <- c(values$datasetlist,name)
-	# tmp.obj<-data.frame(values$final.opls.results$loadings[,],values$final.opls.results$loading.weights[,])
-	# tmp.obj$VIP<-values$final.opls.results$VIP[,] # may not exist
-	# values[[name]]<-tmp.obj
 		
 	#feature selection
 	#---------------------------
@@ -245,7 +240,7 @@ opls <- reactive({
 
 	if(input$opls_feature_selection_type=="quantile"){
 			top<-1-input$opls_feature_selection_type_value/100
-			if(input$opls_feature_selection_separate){top<-top/2}
+			# if(input$opls_feature_selection_separate){top<-top/2}
 			# return.max<-ceiling(ncol(scaled.data)*top)
 		} else {
 			top<-input$opls_feature_selection_type_value # c
@@ -263,7 +258,17 @@ opls <- reactive({
 					p.value=input$opls_feature_selection_p_val, FDR=input$opls_feature_selection_FDR,
 					cut.type=input$opls_feature_selection_type,top=top,
 					separate=input$opls_feature_selection_separate,type=input$opls_feature_selection_cor_type,make.plot=FALSE)
-							
+		
+		# #store results for later
+		name<-paste0(input$datasets,"_opls_selection_info")	
+		values[[name]]<-data.frame(index=1:ncol(opls.data),selected.features)
+		opls_result_objects<-c(opls_result_objects,name)
+		
+		# values[["opls_objects"]]$opls_features_object_name<-name	
+		# values[["opls_objects"]]$opls_selected_features_report<-data.frame(index=1:ncol(opls.data),selected.features)
+		# values[["opls_objects"]]$opls_selected_features_report_name<-name<-paste0(input$datasets,"_OPLS_feature_info")					
+		# values[["opls_objects"]]$return_obj_name<-c(values[["opls_objects"]]$return_obj_name,paste0(input$datasets,"_OPLS_feature_info"))
+		
 		#method description			
 		feat.decription<-data.frame(options=t(feat.decription<-data.frame(p.value=input$opls_feature_selection_p_val, FDR=input$opls_feature_selection_FDR,
 					cut.type=input$opls_feature_selection_type,top=top,
@@ -275,12 +280,20 @@ opls <- reactive({
 		summary.selected.features<-list(tmp,feat.decription)
 		
 		#need a mechanism to save feature selected data as a separate data set
-		opls.sel.data<-cbind(pls.y,getdata()[,rownames(tmp),drop=FALSE])# better leave y alone!!!!!
-		isolate({
-			name<-paste0(input$datasets,"_opls_features")
-			values$datasetlist <- unique(c(values$datasetlist,name) )
-			values[[name]]<-opls.sel.data
-		})
+		#this should be trigged by a button
+		# opls.sel.data<-cbind(pls.y,getdata()[,rownames(tmp),drop=FALSE])# better leave y alone!!!!!
+		opls.sel.data<-cbind(pls.y,getdata()[,rownames(tmp),drop=FALSE])
+		
+		# isolate({
+			# # name<-paste0(input$datasets,"_opls_features")
+			# # values$datasetlist <- unique(c(values$datasetlist,name) )
+			# # values[[name]]<-opls.sel.data
+			
+		# #store object for later save
+		name<-paste0(input$datasets,"_opls_features")
+		values[["opls_objects"]]$opls_features_object_name<-name
+		values[[name]]<-opls.sel.data
+		opls_result_objects<-c(opls_result_objects,name)
 		
 		
 	} else {
@@ -312,7 +325,7 @@ opls <- reactive({
 				mod.description<-data.frame(tmp)
 				
 		} else {
-				#user specified train/test need to be "train" and "test"
+				#user specified train/test need to be "train" and "test" (add 1, 0 where 1=test)
 				int.train.test.index<-getdata()[,input$opls_internal_testing_var,drop=FALSE]
 				if(!length(c("test","train")%in%unique(int.train.test.index))==2)
 				int.train.test.index<-NULL
@@ -332,9 +345,9 @@ opls <- reactive({
 		permutation.results<-NULL
 	}	
 	
-	#carry out training/testing	and or permutations
+	#carry out training/testing	and or permutations (limiting to first Y)
 	if(input$opls_n_tests>0&input$opls_internal_testing==TRUE){
-			int.test.train.results<-values$int.test.train.results<-OSC.PLS.train.test(pls.data = scaled.data, pls.y = pls.y, train.test.index=int.train.test.index,
+			int.test.train.results<-values$int.test.train.results<-OSC.PLS.train.test(pls.data = scaled.data, pls.y = pls.y[,1,drop=FALSE], train.test.index=int.train.test.index,
 									comp = input$opls_pcs, 
 									OSC.comp = input$opls_o_pcs, 
 									cv.scale = cv.scale,
@@ -347,34 +360,140 @@ opls <- reactive({
 			model.performance<-OSC.validate.model(model = values$opls.results, perm = permutation.results, train = NULL)
 			int.test.perf<-model.performance
 		}
+	
+	# #carry out validations on feature selected object
+	# if(exists("opls.sel.data")){
+		# sel.scaled.data<-scaled.data<-data.frame(prep(opls.sel.data,center=input$opls_center,scale=input$opls_scaling))		
+		# #permutation testing (may use int.test.train.index)
+		# if(input$opls_n_tests>0&input$opls_permutation==TRUE){
+			# sel.permutation.results<-values$sel.opls.permutation.results<-permute.OSC.PLS(data = sel.scaled.data, y = pls.y, 
+				# n = input$opls_n_tests, ncomp = input$opls_pcs, 
+				# osc.comp = input$opls_o_pcs, 
+				# train.test.index = int.train.test.index,
+				# progress = FALSE)
+		# } else {
+			# sel.permutation.results<-NULL
+		# }	
 		
-	#collect model outputs for return or plotting
+		# #carry out training/testing	and or permutations (limiting to first Y)
+		# if(input$opls_n_tests>0&input$opls_internal_testing==TRUE){
+			# sel.model<-make.OSC.PLS.model(pls.y,pls.data=sel.scaled.data,
+							# comp=input$opls_pcs,
+							# OSC.comp=input$opls_o_pcs, 
+							# validation = input$opls_validation, 
+							# method=input$opls_method, 
+							# cv.scale=cv.scale, 
+							# train.test.index=NULL,
+							# progress=FALSE)				
+			# sel.int.test.train.results<-values$sel.int.test.train.results<-OSC.PLS.train.test(pls.data = sel.scaled.data, pls.y = pls.y[,1,drop=FALSE], train.test.index=int.train.test.index,
+									# comp = input$opls_pcs, 
+									# OSC.comp = input$opls_o_pcs, 
+									# cv.scale = cv.scale,
+									# validation = input$opls_validation, 
+									# method=input$opls_method,
+									# progress = FALSE)
+			# sel.model.performance<-OSC.validate.model(model = sel.model, perm = sel.permutation.results, train = sel.int.test.train.results)
+			# sel.int.test.perf<-sel.model.performance
+		# } else {
+			# sel.model<-make.OSC.PLS.model(pls.y,pls.data=sel.scaled.data,
+							# comp=input$opls_pcs,
+							# OSC.comp=input$opls_o_pcs, 
+							# validation = input$opls_validation, 
+							# method=input$opls_method, 
+							# cv.scale=cv.scale, 
+							# train.test.index=NULL,
+							# progress=FALSE)			
+			# sel.model.performance<-OSC.validate.model(model = sel.model, perm = sel.permutation.results, train = NULL)
+			# sel.int.test.perf<-sel.model.performance
+		# }
+		
+	# }
+	
+	
 	# #--------------------------------------------
 	# #scores, fitted values, residual, etc
-	isolate({
-		name<-paste0(input$datasets,"_OPLS_sample_info")
-		#add index, and Y for visualizations
-		info<-data.frame(index=c(1:nrow(values$final.opls.results$y[[1]])),values$final.opls.results$y[[1]])
-		tmp.obj<-data.frame(info,scores=values$final.opls.results$scores[,],fitted.values=values$final.opls.results$fitted.values[,],residuals=values$final.opls.results$residuals[,])
-		#add meta data and rownames
-		meta<-fixlr(getdata(),.remove=F)
-		tmp.obj<-data.frame(names=rownames(values$final.opls.results$scores),meta,tmp.obj)
-		values[[name]]<-tmp.obj
-		values$datasetlist <- unique(c(values$datasetlist,name))
-	})
-	# #loadings, coefficients, VIP, etc
-	isolate({
-		name<-paste0(input$datasets,"_OPLS_variable_info")
-		tmp.obj<-data.frame(index=c(1:nrow(values$final.opls.results$loadings)),names=rownames(values$final.opls.results$loadings),loadings=values$final.opls.results$loadings[,],coefficients=values$final.opls.results$coefficients)
-		tmp.obj$VIP<-values$final.opls.results$VIP[,] # may not exist
-		tmp.obj$names<-rownames(values$final.opls.results$loadings)
-		values[[name]]<-tmp.obj
-		values$datasetlist <- unique(c(values$datasetlist,name))
-	})
+	name<-paste0(input$datasets,"_OPLS_sample_info")
+	# #add index, and Y for visualizations
+	info<-data.frame(index=c(1:nrow(values$final.opls.results$y[[1]])),values$final.opls.results$y[[1]])
+	tmp.obj<-data.frame(info,scores=values$final.opls.results$scores[,],fitted.values=values$final.opls.results$fitted.values[,],residuals=values$final.opls.results$residuals[,])
+	#add meta data and rownames
+	meta<-fixlr(getdata(),.remove=F)
+	tmp.obj<-data.frame(names=rownames(values$final.opls.results$scores),meta,tmp.obj)
+	values[["opls_objects"]]$opls_sample_info_name<-name
+	values[[name]]<-tmp.obj	
+	opls_result_objects<-c(opls_result_objects,name)
 	
-	return(list(description=mod.description,statistics = opls.model.text,"Validated Model Performance"=int.test.perf,selected.features=summary.selected.features))
+	# #loadings, coefficients, VIP, etc
+	name<-paste0(input$datasets,"_OPLS_variable_info")
+	tmp.obj<-data.frame(index=c(1:nrow(values$final.opls.results$loadings)),names=rownames(values$final.opls.results$loadings),loadings=values$final.opls.results$loadings[,],coefficients=values$final.opls.results$coefficients)
+	tmp.obj$VIP<-values$final.opls.results$VIP[,] # may not exist
+	tmp.obj$names<-rownames(values$final.opls.results$loadings)
+	values[["opls_objects"]]$opls_variable_info_name<-name
+	values[[name]]<-tmp.obj	
+	opls_result_objects<-c(opls_result_objects,name)
+	
+	values$opls_result_objects<-unlist(unique(opls_result_objects)) #all results
+	return(list(description=mod.description,statistics = opls.model.text,"Validated Model Performance (Y1)"=int.test.perf,selected.features=summary.selected.features))
 	
 })
+
+#save results
+observe({
+	
+	#meta data for scores
+	if(is.null(input$datasets)) return()
+
+	# #update objects to save
+	# isolate({
+		# if(!is.null(values[["opls_objects"]]$opls_selected_features_object)){
+			# #store object for later save
+			# name<-paste0(input$datasets,"_opls_features")
+			# values[["opls_objects"]]$opls_features_object_name<-name
+			# values[[name]]<-values[["opls_objects"]]$opls_selected_features_object
+			# values[["opls_objects"]]$return_obj_name<-c(values[["opls_objects"]]$return_obj_name,name)	
+		# }
+		
+		# if(!is.null(values$final.opls.results$scores)){
+			# name<-paste0(input$datasets,"_OPLS_sample_info")
+			# # #add index, and Y for visualizations
+			# info<-data.frame(index=c(1:nrow(values$final.opls.results$y[[1]])),values$final.opls.results$y[[1]])
+			# tmp.obj<-data.frame(info,scores=values$final.opls.results$scores[,],fitted.values=values$final.opls.results$fitted.values[,],residuals=values$final.opls.results$residuals[,])
+			# #add meta data and rownames
+			# meta<-fixlr(getdata(),.remove=F)
+			# tmp.obj<-data.frame(names=rownames(values$final.opls.results$scores),meta,tmp.obj)
+
+			# # store for later use
+			# values[["opls_objects"]]$opls_sample_info_name<-name
+			# values[[name]]<-tmp.obj	
+			# values[["opls_objects"]]$return_obj_name<-c(values[["opls_objects"]]$return_obj_name,name)	
+		# }
+		
+		# if(!is.null(values$final.opls.results$loadings)){
+			# #loadings, coefficients, VIP, etc
+			# name<-paste0(input$datasets,"_OPLS_variable_info")
+			# tmp.obj<-data.frame(index=c(1:nrow(values$final.opls.results$loadings)),names=rownames(values$final.opls.results$loadings),loadings=values$final.opls.results$loadings[,],coefficients=values$final.opls.results$coefficients)
+			# tmp.obj$VIP<-values$final.opls.results$VIP[,] # may not exist
+			# tmp.obj$names<-rownames(values$final.opls.results$loadings)
+			
+			# #store for later use
+			# values[["opls_objects"]]$opls_variable_info_name<-name
+			# values[[name]]<-tmp.obj	
+			# values[["opls_objects"]]$return_obj_name<-unique(c(values[["opls_objects"]]$return_obj_name,name))	
+			
+		# }
+	# })		
+		
+	#update GUI
+	if(is.null(values$opls_result_objects)) return()
+	updateSelectInput(session, "opls_result_obj", choices = c("-----" = "",values$opls_result_objects))
+	
+	# #save
+	if(is.null(input$save_opls_result_obj) || input$save_opls_result_obj == 0) return()
+	isolate({
+		values$datasetlist <- unique(c(values$datasetlist,values$opls_result_objects))
+	})	
+})	
+
 
 #change GUI based on inputs
 #change input$opls_feature_selection_type_value_quant based on input$opls_feature_selection_type value
@@ -385,9 +504,11 @@ observe({
 	}
 	if(input$opls_feature_selection_type=="quantile"){
 		updateNumericInput(session,"opls_feature_selection_type_value", "Top percent",min=0,max=100,step=5,value=10)
-	}
+	}	
 })
 
+
+#plot results
 plot.opls <- function(result) {
 	#set colors (getting ugly!)
 	opls_groups<-input$opls_groups

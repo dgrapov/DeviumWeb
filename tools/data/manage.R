@@ -5,7 +5,7 @@ ui_Manage <- function() {
 		  radioButtons(inputId = "dataType", label = "Load data:", c(".rda" = "rda", ".csv" = "csv", "clipboard" = "clipboard", "examples" = "examples"), selected = ".rda"),
 		  conditionalPanel(condition = "input.dataType != 'clipboard' && input.dataType != 'examples'",
 			conditionalPanel(condition = "input.dataType == 'csv'",
-			  checkboxInput('header', 'Header', TRUE),
+			  checkboxInput('header', 'Header', TRUE),checkboxInput('csv_rownames', 'with Rownames', TRUE),
 			  radioButtons('sep', '', c(Comma=',', Semicolon=';', Tab='\t'), 'Comma')
 			),
 			fileInput('uploadfile', '', multiple=TRUE)
@@ -35,6 +35,13 @@ ui_Manage <- function() {
       uiOutput("removeDataset"),
       actionButton('removeDataButton', 'Remove data')
 	 )
+	) ,
+	 wellPanel(
+	  tags$details(tags$summary("Merge"),	
+		selectInput(inputId = "MainMergeDataSet", label = "Primary Dataset:", choices = c("------",values$datasetlist), selected = "------", multiple = FALSE),
+		selectInput(inputId = "SecondaryMergeDataSet", label = "Merge with:", choices = c("------",values$datasetlist),selected = "------", multiple = FALSE),
+		actionButton('mergeDataButton', 'Merge data sets')
+	 ) 
     ),
     helpModal('Manage','manage',includeMarkdown("tools/help/manage.md"))
   )
@@ -181,7 +188,8 @@ loadUserData <- function(filename, uFile) {
   } else if(ext == 'dta') {
     values[[objname]] <- read.dta(uFile)
   } else if(ext == 'csv') {
-    values[[objname]] <- read.csv(uFile, header=input$header, sep=input$sep)
+	if(input$csv_rownames){rownames<-1} else {rownames<-NULL}
+    values[[objname]] <- read.csv(uFile, header=input$header, sep=input$sep,row.names=rownames)
   }
 }
 
@@ -310,4 +318,23 @@ output$htmlDataExample <- reactive({
   Encoding(html) <- 'UTF-8'
   html
 
+})
+
+
+#merge 2 data sets based on rownames
+observe({
+	if(is.null(input$MainMergeDataSet)||is.null(input$mergeDataButton)) return()
+	if(input$MainMergeDataSet=="------"|input$SecondaryMergeDataSet=="------") return()
+		#merge on row name
+		isolate({
+			d1<-values[[input$MainMergeDataSet]]
+			d2<-values[[input$SecondaryMergeDataSet]]
+			merged.data<-merge(data.frame(names=rownames(d1),d1), data.frame(names=rownames(d2),d2), by="names", all=TRUE)
+			names<-merged.data[,1]
+			rownames(merged.data)<-names
+			merged.data<-merged.data[,-1,drop=FALSE]
+			name<-paste("merged",input$MainMergeDataSet,input$SecondaryMergeDataSet,sep="_")
+			values[[name]]<-merged.data
+			values[['datasetlist']] <- c(values$datasetlist,name)
+		})
 })

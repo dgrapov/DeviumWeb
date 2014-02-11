@@ -8,15 +8,15 @@
 
 output$summary_groups<-renderUI({
 vars <- varnames()
-	isNum <- !"numeric" == getdata_class() & !"integer" == getdata_class()
+	isNum <- !"numeric" == getdata_class() & !"integer" == getdata_class()|!"logical" == getdata_class()
  	vars <- vars[isNum]
-  if(length(vars) == 0) return()
-  selectInput(inputId = "sum_group", label = "Grouping variables:", choices = vars, selected = names(vars), multiple = TRUE)
+  # if(length(vars) == 0) return()
+  selectInput(inputId = "sum_group", label = "Grouping variables:", choices = c("none"="none",vars),selected="none", multiple = TRUE)
 })
 
 output$summary_variables <- renderUI({
   vars <- varnames()
-	isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
+	isNum <- "numeric" == getdata_class() | "integer" == getdata_class() | "logical" == getdata_class()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
   selectInput(inputId = "sum_var", label = "Data:", choices = vars, selected = names(vars), multiple = TRUE)
@@ -29,14 +29,14 @@ ui_datasummary <- function() {
 		uiOutput("summary_variables"), # variables
 		uiOutput("summary_groups"), # groups
 		conditionalPanel(condition = "input.analysistabs == 'Summary'",
-			selectInput(inputId = "sum_stat_vars", label = "Statistics", choices = list("mean"="sum_mean","median"="sum_median","standard deviation"="sum_sd","minimum"="sum_min","maximum"="sum_max"), selected = c("mean","standard deviation"), multiple =TRUE),
+			selectInput(inputId = "sum_stat_vars", label = "Statistics", choices = list("mean"="sum_mean","median"="sum_median","sum"="sum","standard deviation"="sum_sd","minimum"="sum_min","maximum"="sum_max","RSD"="rsd","Fold change"="FC"), selected = c("mean","standard deviation"), multiple =TRUE),
 			radioButtons(inputId = "sum_formatresults", label = "Format results:", c("Separate" = "separate", "Formatted" = "formatted"), selected = "Separate"),
 			actionButton("save_stats_summary_results", "Save results")			
 		)
 	),
 	
- 		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
- 		helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
+	# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
+	helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
 
@@ -83,7 +83,13 @@ datasummary <- reactive({
 
 		# return("nothing to see")
 	data <- getdata()[,input$sum_var,drop=FALSE]
-	factor<-getdata()[,input$sum_group,drop=FALSE]
+	id<-match("none",input$sum_group)
+	if(is.na(id)){
+		factor<-getdata()[,input$sum_group,drop=FALSE]
+	} else {
+		indata<-values$AAindata<-input$sum_group[-id]
+		factor<-data.frame(id=rep("id",nrow(getdata())),getdata()[,indata,drop=FALSE])
+	}
 	formula<-paste(colnames(factor),collapse="*")
 	sig.figs<-3
 	test.obj<-join.columns(factor)
@@ -101,6 +107,9 @@ datasummary <- reactive({
 		if("sum_sd"%in%input$sum_stat_vars){res<-c(res,calc.stat(tmp.data,factor=fct,stat=c("sd"),na.rm=TRUE))}
 		if("sum_min"%in%input$sum_stat_vars){res<-c(res,calc.stat(tmp.data,factor=fct,stat=c("min"),na.rm=TRUE))}
 		if("sum_max"%in%input$sum_stat_vars){res<-c(res,calc.stat(tmp.data,factor=fct,stat=c("max"),na.rm=TRUE))}
+		if("rsd"%in%input$sum_stat_vars){res<-c(res,calc.rsd(tmp.data,factor=fct))}
+		if("FC"%in%input$sum_stat_vars){res<-c(res,calc.FC(tmp.data,factor=fct,denom=levels(fct)[1],sig.figs=3))}
+		if("sum"%in%input$sum_stat_vars){res<-c(res,calc.stat(tmp.data,factor=fct,stat=c("sum"),na.rm=TRUE))}
 		res<-do.call("cbind",res)
 		rownames(res)<-colnames(tmp.data)
 	}

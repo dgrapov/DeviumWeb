@@ -5,8 +5,8 @@ DeviumWeb
 
 ### Install DeviumWeb
 
-- Required: [R](http://cran.rstudio.com/)
-- Required: [Shiny](http://www.rstudio.com/shiny/)
+- Required: [R](http://cran.rstudio.com/) (v3.0.1)
+- Required: [Shiny](http://www.rstudio.com/shiny/) (v0.8.0)
 - Required: A modern browser (e.g., Chrome, Firefox, or Safari). Internet Explorer is not supported.
 
 To download, click the 'Download ZIP' button. Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).

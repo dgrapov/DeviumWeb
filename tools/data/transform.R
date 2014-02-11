@@ -136,14 +136,16 @@ ui_Transform <- function() {
 	)
 }
 
-transform_main <- reactive({
+transform_main <- reactive(
+	quote({ 
 
 	if(input$datatabs != 'Transform') return()
 	if(is.null(input$tr_changeType) || input$tr_changeType == '') return()
 	if(is.null(input$datasets)) return()
 
 	dat <- getdata()
-
+	
+	
 	if(input$tr_changeType == 'reorder_cols') {
     if(is.null(input$tr_reorder_cols)) {
       ordVars <- colnames(dat)
@@ -153,7 +155,7 @@ transform_main <- reactive({
  	  return(dat[,ordVars, drop = FALSE])
   }
 
-	if(!is.null(input$tr_columns)) {
+	if(!is.null(input$tr_columns)) { # change
 
 		if(!all(input$tr_columns %in% colnames(dat))) return()
 		dat <- data.frame(dat[, input$tr_columns, drop = FALSE])
@@ -237,9 +239,10 @@ transform_main <- reactive({
 			}
 		}
 	}
-
+	
 	dat
-})
+	}), quoted=TRUE
+)
 
 output$transform_data <- reactive({
 
@@ -261,18 +264,21 @@ output$transform_data <- reactive({
 
 output$transform_summary <- renderPrint({
 
-	dat <- transform_main()
+	dat <-transform_main()
 	if(is.null(dat)) return(invisible()) 			# ...
 
 	isFct <- sapply(dat, is.factor)
 	isNum <- sapply(dat, is.numeric)
 	isDate <- sapply(dat, is.Date)
+	isInt <- sapply(dat, is.integer)
 	# isChar <- sapply(getdata(), is.character)
-
-	if(sum(isNum) > 0) {
+	
+	if(sum(c(isNum,isInt)) > 0) { # describe does not seem to work
 		cat("\nSummarize numeric variables:\n")
 		# print(describe(dat[,isNum])[,c("n","mean","sd","median","min","max","range","skew","kurtosis","se")])
-		print(describe(dat[,isNum])[,c("n","mean","median","min","max","range","sd","se","skew","kurtosis")])
+		print(psych::describe(dat[,as.logical(isNum|isInt),drop=FALSE]))
+		# print(as.logical(isNum|isInt))
+		
 	}
 	if(sum(isFct) > 0) {
 		cat("\nSummarize factors:\n")
@@ -313,4 +319,6 @@ observe({
 		updateSelectInput(session = session, inputId = "tr_transfunction", choices = trans_options, selected = "None")
 	})
 })
+
+#additions DeviumWeb
 
