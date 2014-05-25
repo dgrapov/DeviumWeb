@@ -19,9 +19,9 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
  	library(shiny)
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
-### Version
+### Download
 
-0.1.0 (2/10/14)
+[DeviumWeb v1.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) 
 - first stable alpha release
 
 ### TODO
