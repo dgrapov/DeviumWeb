@@ -1,8 +1,9 @@
 [DeviumWeb](http://spark.rstudio.com/dgrapov/DeviumWeb/#)
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
-![logo](other/generic_logo)
-![demo](other/devium1.0)
+
+![logo](other/generic_logo.png)
+![demo](other/devium1.0.gif)
 
 ### Download
 - [DeviumWeb v1.0.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) (02/2014)
