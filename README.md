@@ -7,6 +7,7 @@
 
 [DeviumWeb v1.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) 
 - first stable alpha release
+To download the current development version: click the 'Download ZIP' button.
 
 
 ### Installation
@@ -15,7 +16,7 @@
 - Required: [Shiny](http://www.rstudio.com/shiny/) (v0.8.0)
 - Required: A modern browser (e.g., Chrome, Firefox, or Safari). Internet Explorer is not supported.
 
-To download, click the 'Download ZIP' button. Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
+Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
 
 	# on windows
 	library(shiny)
