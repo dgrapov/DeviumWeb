@@ -2,10 +2,11 @@ ui_Manage <- function() {
   list(wellPanel(
       # radioButtons(inputId = "dataType", label = "Load data:", c(".rda" = "rda", ".csv" = "csv", "clipboard" = "clipboard"), selected = ".rda"),
       tags$details(tags$summary("Load"),	
-		  radioButtons(inputId = "dataType", label = "Load data:", c(".rda" = "rda", ".csv" = "csv", "clipboard" = "clipboard", "examples" = "examples"), selected = ".rda"),
+		  radioButtons(inputId = "dataType", label = "Load data:", c(".rda" = "rda", ".csv" = "csv", "clipboard" = "clipboard", "examples" = "examples"), selected = ".csv"),
 		  conditionalPanel(condition = "input.dataType != 'clipboard' && input.dataType != 'examples'",
 			conditionalPanel(condition = "input.dataType == 'csv'",
-			  checkboxInput('header', 'Header', TRUE),checkboxInput('csv_rownames', 'with Rownames', TRUE),
+			  checkboxInput('header', 'Header', TRUE),checkboxInput('csv_rownames', 'Rownames', TRUE),
+			  checkboxInput('transpose', 'Transpose', FALSE),
 			  radioButtons('sep', '', c(Comma=',', Semicolon=';', Tab='\t'), 'Comma')
 			),
 			fileInput('uploadfile', '', multiple=TRUE)
@@ -20,7 +21,7 @@ ui_Manage <- function() {
     ),
     wellPanel(
 	  tags$details(tags$summary("Save"),	
-      radioButtons(inputId = "saveAs", label = "Save data:", c(".rda" = "rda", ".csv" = "csv", "clipboard" = "clipboard"), selected = ".rda"),
+      radioButtons(inputId = "saveAs", label = "Save data:", c(".rda" = "rda", ".csv" = "csv", "clipboard" = "clipboard"), selected = ".csv"),
       checkboxInput("man_add_descr","Add/edit data description", FALSE),
       conditionalPanel(condition = "input.saveAs == 'clipboard'",
         actionButton('saveClipData', 'Copy data')
@@ -189,7 +190,11 @@ loadUserData <- function(filename, uFile) {
     values[[objname]] <- read.dta(uFile)
   } else if(ext == 'csv') {
 	if(input$csv_rownames){rownames<-1} else {rownames<-NULL}
-    values[[objname]] <- read.csv(uFile, header=input$header, sep=input$sep,row.names=rownames)
+	if(input$transpose){
+		values[[objname]] <- fixlt(read.csv(uFile, header=input$header, sep=input$sep,row.names=rownames))
+	} else {
+		values[[objname]] <- read.csv(uFile, header=input$header, sep=input$sep,row.names=rownames)
+	}	
   }
 }
 
@@ -216,16 +221,22 @@ loadPackData <- function(pFile) {
 output$datasets <- renderUI({
 
   inFile <- input$uploadfile
-
+ 
   # if(!is.null(inFile)) loadUserData(inFile$name, inFile$datapath)
   if(!is.null(inFile)) {
     # iterating through the files to upload
+	if(is.null(values$lastUploadedTempFile)){current<-""} else {current<-values$lastUploadedTempFile}
+	if(is.null(input$uploadfile$datapath)){toload<-"none"} else {toload<-input$uploadfile$datapath}
+	if(!current==toload){
     isolate({
       for(i in 1:(dim(inFile)[1])) {
         loadUserData(inFile[i,'name'], inFile[i,'datapath'])
         # unlink(inFile[i,'datapath'], recursive = FALSE, force = TRUE)
       }
+	  values$lastUploadedTempFile<-input$uploadfile$datapath # preventing repeated loading on datsetlist change
     })
+	}
+	
   }
 
   # # loading package data
@@ -320,10 +331,28 @@ output$htmlDataExample <- reactive({
 
 })
 
+#give data structure for debug
+output$ManageDataStr <- renderPrint({
+  if(is.null(input$datasets)) return()
+
+  dat <- getdata()
+
+  # necessary when deleting a dataset
+  if(is.null(dat)) return()
+  #get simple summary
+  isfct<-sapply(dat,is.factor)
+  isnum<-sapply(dat,is.numeric)|sapply(dat,is.integer)
+  datasum<-list(dimensions = data.frame(rows=dim(dat)[1],columns=dim(dat)[2]),
+				factors = tryCatch(summary(dat[,isfct,drop=FALSE]),error=function(e){NULL}),
+				zeros = sum(dat[,isnum,drop=FALSE]==0),
+				"missing values" = sum(is.na(dat[,isnum,drop=FALSE]))
+  )
+  print(datasum)
+ })  
 
 #merge 2 data sets based on rownames
 observe({
-	if(is.null(input$MainMergeDataSet)||is.null(input$mergeDataButton)) return()
+	if(is.null(input$MainMergeDataSet)||is.null(input$mergeDataButton)||input$mergeDataButton == 0) return()
 	if(input$MainMergeDataSet=="------"|input$SecondaryMergeDataSet=="------") return()
 		#merge on row name
 		isolate({

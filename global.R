@@ -74,21 +74,6 @@ returnOrder <- function(inputId, vars) {
 #----------
 
 
-# setting up a few standard datasets to play with 
-# mtcars$vs <- as.factor(mtcars$vs)
-# mtcars$am <- as.factor(mtcars$am)
-
-# Our datasets can change over time (i.e. the changedata function). Therefore,
-# these need to be reactive values; otherwise, the other reactive functions
-# and outputs that depend on these datasets won't know that they are changed.
-
-# Note that we never get or assign the "original" copies of mtcars, morley, 
-# or rock. This way, all user sessions are independent from each other 
-
-# values$mtcars <- mtcars
-# n <- nrow(diamonds)
-# values$diamonds <- diamonds[sample(1:n,3000),]
-
 # mtcars <- NULL
 robj <- load("data/mtcars.rda") 
 
@@ -183,20 +168,20 @@ helpModal <- function(title, link, content) {
 
 
 #get Devium R-scripts for analysis functions
-source("http://pastebin.com/raw.php?i=JVyTrYRD")
+# source("http://pastebin.com/raw.php?i=JVyTrYRD")
 
 values$debug_on<-TRUE # turn FALSE to remove debugging
 # #source local directory to load devium fxns
-# source.local.dir<-function(wd){
-	# o.dir<-getwd()
-	# setwd(wd)
-	# files<-dir()[unique(c(agrep(".r",dir()),agrep(".R",dir())))]
-	# lapply(1:length(files),function(i) {tryCatch(source(files[i]),error=function(e){paste0("can't load-->",files[i])})
-	# })
-	# setwd(o.dir)
-# }
+source.local.dir<-function(wd){
+	o.dir<-getwd()
+	setwd(wd)
+	files<-dir()[unique(c(agrep(".r",dir()),agrep(".R",dir())))]
+	lapply(1:length(files),function(i) {tryCatch(source(files[i]),error=function(e){paste0("can't load-->",files[i])})
+	})
+	setwd(o.dir)
+}
 
-# source.local.dir("C:/Users/D/Dropbox/Devium/devium/R")
+source.local.dir("C:/Users/D/Dropbox/Devium/devium/R")
 
 # Simulate a big data-file
 # n <- 200000

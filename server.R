@@ -28,7 +28,8 @@ shinyServer(function(input, output, session) {
 	# data tabs
 	output$ui_data_tabs <- renderUI({
     tabsetPanel(id = "datatabs",
-      tabPanel("Manage", htmlOutput("htmlDataExample"), 
+      tabPanel("Manage", 
+	  htmlOutput("htmlDataExample"), 
       	HTML('<label>10 (max) rows shown. See View-tab for details.</label>'),
 	      conditionalPanel(condition = "input.man_add_descr == false",
 	      	HTML(dataDescriptionOutput())
@@ -36,7 +37,8 @@ shinyServer(function(input, output, session) {
 	      conditionalPanel(condition = "input.man_add_descr == true",
  	  	  	HTML("<label>Add data description:</label>"),
 		  	  tags$textarea(id="man_data_descr", rows="10", cols="12", dataDescriptionOutput('md'))
-		  	)
+		  	),
+		  verbatimTextOutput("ManageDataStr") # give data structure	
      	),
       # tabPanel("View", htmlOutput("dataviewer")),
       tabPanel("View", dataTableOutput("dataviewer")),

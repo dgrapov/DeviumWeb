@@ -130,8 +130,8 @@ ui_hclustering <- function() {
 		wellPanel(
 			h4("Cluster"),
 			tags$details(tags$summary("Options"),
-				selectInput("hc_dist", label = "Distance measure:", choices = hc_dist_method, selected = hc_dist_method[1], multiple = FALSE),
-				selectInput("hc_meth", label = "Method:", choices = hc_method, selected = hc_method[1], multiple = FALSE),
+				selectInput("hc_dist", label = "Distance measure:", choices = hc_dist_method, selected = "euclidean", multiple = FALSE),
+				selectInput("hc_meth", label = "Method:", choices = hc_method, selected = "ward" , multiple = FALSE),
 				uiOutput("hc_clusters"),
 				actionButton("hc_saveclus", "Save cluster membership")
 			)

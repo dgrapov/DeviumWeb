@@ -47,30 +47,18 @@ summary.datasummary <- function(result) {
 plot.datasummary <- function(result) {
 	if(input$analysistabs == 'Summary'){return("")}
 	
-	factor<-getdata()[,input$sum_group,drop=FALSE]
+	if(input$sum_group=="none"){
+		factor<-data.frame(data=rep("1",nrow(getdata())))
+	} else {
+		factor<-getdata()[,input$sum_group,drop=FALSE]
+	}
 	if(is.null(factor)){
 		return("Select data with factors or create factors for the current data set.")
 	}
 	data <- getdata()[,input$sum_var,drop=FALSE]
-	test.obj<-join.columns(factor)
-	if(ncol(factor)>1){legend.name<-paste0(colnames(factor),collapse="|")} else {legend.name<-colnames(factor)}
-	#create box plots
-	plots <- list()
-	.theme<- theme(
-				axis.line = element_line(colour = 'gray', size = .75), 
-				panel.background = element_blank(),  
-				plot.background = element_blank()
-				 )	 
-	dat<-data.frame(data,group=factor(test.obj, ordered=FALSE))
-		
-	for(i in 1:ncol(data)){
-		plots[[i]]<-ggplot(dat, aes_string(x = "group", y = colnames(dat)[i],fill = "group")) + 
-		geom_boxplot() +.theme + geom_point(color='black',alpha=.35, position = 'jitter')+ 
-		ggtitle(colnames(dat)[i]) + ylab("")+xlab("")+scale_fill_discrete(name = legend.name)
-	}
-	if(ncol(data)>1){
-		print(do.call(grid.arrange, c(plots, list(ncol = 2))))
-	} else {print(plots)}
+
+	#create MetaboAnalyst like data summary boxplots
+	summary.boxplot(data,factor)
 	
 }
 
@@ -161,7 +149,7 @@ vars <- varnames()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
   #make sure vars are two level factors
-  check<-getdata()[,vars]
+  check<-getdata()[,vars,drop=FALSE]
   keep<-sapply(1:ncol(check),function(i){length(unique(check[,i]))==2})
   vars<-vars[keep]
   

@@ -53,9 +53,9 @@ ui_pca <- function() {
 				uiOutput("pca_variables"), # variables
 				uiOutput("PCs"),
 				checkboxInput("pca_center","Center",TRUE),
-				selectInput("pca_scaling","Scale", list(none = "none", "unit variance" = "uv", pareto = "pareto"),selected="uv"),		
+				selectInput("pca_scaling","Scale", list(none = "none", "unit variance" = "uv", pareto = "pareto"),selected="unit variance"),		
 				selectInput("pca_method","Method", namel(listPcaMethods())),
-				selectInput("pca_cv","cross-validation",list (none = "none", Q2 =  "q2"),selected="q2")
+				selectInput("pca_cv","cross-validation",list (none = "none", Q2 =  "q2"),selected="Q2")
 			),
 			h4('Plot'),
 			tags$details(tags$summary("Options"),	

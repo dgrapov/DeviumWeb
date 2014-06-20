@@ -1,15 +1,20 @@
 DeviumWeb
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
-![logo](devium_logo.png)
+![logo](other/generic_logo)
+![demo](other/devium1.0)
 
-### Install DeviumWeb
+### Download
+- [DeviumWeb v1.0.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) (02/2014)
+- To download the current development version, click the 'Download ZIP' button at the top right of this page. 
+
+### Installation
 
 - Required: [R](http://cran.rstudio.com/) (v3.0.1)
 - Required: [Shiny](http://www.rstudio.com/shiny/) (v0.8.0)
 - Required: A modern browser (e.g., Chrome, Firefox, or Safari). Internet Explorer is not supported.
 
-To download, click the 'Download ZIP' button. Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
+Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
 
 	# on windows
 	library(shiny)
@@ -19,10 +24,6 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
  	library(shiny)
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
-### Version
-
-0.1.0 (2/10/14)
-- first stable alpha release
 
 ### TODO
 

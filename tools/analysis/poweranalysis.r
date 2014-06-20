@@ -161,6 +161,21 @@ poweranalysis <- reactive({
 					error = function(e) {"Could not be calculated."})
 		}
 	}
+	
+	#save object
+	if(!is.null(out)){ # need to fix power analysis to handle single row data frame?
+		if(!out=="Can not calculate.")	{
+			if(input$power_calculation == "inputs"){
+				name<-"poweranalysis"
+				values[[name]]<-data.frame(out)
+				values[["data_poweranalysis_object"]]<-unique(c(values[["data_poweranalysis_object"]],name))
+			} else{
+				name<-paste0(input$datasets,"_poweranalysis")
+				values[[name]]<-afixlnf(out)
+				values[["data_poweranalysis_object"]]<-unique(c(values[["data_poweranalysis_object"]],name))
+			}
+		}
+	}
 	return(out)
 	
 })
@@ -231,43 +246,6 @@ ui_poweranalysis <- function() {
 			choices = list("Loading"),		
 			selected  		= "Loading"
 		 ),
-		#), 
-		
-		#should implement update instead of this cluster
-		# conditionalPanel(
-				# condition = "input.power_calculation == 'inputs' && input.power_test_type != 'correlation'",
-				 # selectInput(
-				# "input_calculation_type", "Calculate:",
-				# choices = list("power" 	= "power",
-				# # "number of groups"   = "k",
-				# "samples per group" 	= "n",
-				# "p-value" 		= "alpha",
-				# "effect size" = "effect"),		
-				# selected  		= "power"
-				# # choices=power.choices(),selected=power.choices()[1]
-				 # )
-		# ), 
-		# conditionalPanel(
-				# condition = "input.power_calculation == 'inputs' && input.power_test_type == 'correlation'",
-				 # selectInput(
-				# "input_calculation_type_cor", "Calculate:",
-				# choices = list("power" 	= "power",
-				# # "number of groups"   = "k",
-				# "sample size" 	= "n",
-				# "p-value" 		= "alpha",
-				# "correlation" = "cor"),		
-				# selected  		= "power"
-				 # )
-		# ),
-		# conditionalPanel(
-				# condition = "input.power_calculation != 'inputs'",
-				 # selectInput(
-				# "input_calculation_type_data", "Calculate:",
-				# choices = list("power" 	= "power",
-				# "p-value" 		= "alpha"),		
-				# selected  		= "power"
-				 # )
-		# ),
 		conditionalPanel(
 				condition = "input.power_calculation == 'data'",
 				uiOutput("power_factor"),
@@ -297,7 +275,11 @@ ui_poweranalysis <- function() {
 		conditionalPanel(
 			condition = "input.power_test_type == 'correlation' && input.power_calculation == 'inputs'",
 				uiOutput("input_correlation")
-			)
+			),
+		conditionalPanel(
+			condition = "input.input.power_calculation == 'data'",
+				actionButton("save_poweranalysis_results", "Save changes")
+			)	
 	)
 }	 
 
@@ -320,6 +302,13 @@ observe({
 	
 	if(input$power_calculation == "data"){
 		updateSelectInput(session = session,"input_calculation_type",choices = list("power" = "power"), selected ="power")
+	}
+	
+	#save results
+	if(!is.null(input$save_poweranalysis_results)||!input$save_poweranalysis_results==0||!is.null(values[["data_poweranalysis_object"]])){
+		isolate({
+			values[["datasetlist"]]<-unique(c(values[["datasetlist"]],values[["data_poweranalysis_object"]]))
+		})
 	}
 	
 })

@@ -73,7 +73,7 @@ ui_opls <- function() {
 		checkboxInput("opls_center","Center",TRUE),
 		selectInput("opls_scaling","Scale", list(none = "none", "unit variance" = "uv", pareto = "pareto"),selected="unit variance"),
 		selectInput("opls_method","Method", list("NIPALS"= "oscorespls","kernel" = "kernelpls", "wide kernel"= "widekernelpls")),	# need to figure which are loading weights for "SIMPLS"="simpls"
-		selectInput("opls_validation","Cross-validation", list(none = "none", "Leave-one-out"="LOO", "n-fold" = "CV"))
+		selectInput("opls_validation","Cross-validation", list(none = "none", "Leave-one-out"="LOO", "n-fold" = "CV"),selected="Leave-one-out")
 		),
 		tags$details(tags$summary("Validate"),
 			numericInput("opls_n_tests", "Number of tests:", value=0, min = 0,step=10),
@@ -257,7 +257,7 @@ opls <- reactive({
 		selected.features<-values$opls.selected.features<-PLS.feature.select(pls.data=scaled.data,pls.scores=.scores[,1],pls.loadings=.loadings,pls.weight=.loadings,
 					p.value=input$opls_feature_selection_p_val, FDR=input$opls_feature_selection_FDR,
 					cut.type=input$opls_feature_selection_type,top=top,
-					separate=input$opls_feature_selection_separate,type=input$opls_feature_selection_cor_type,make.plot=FALSE)
+					separate=input$opls_feature_selection_separate,type=input$opls_feature_selection_cor_type,plot=FALSE)
 		
 		# #store results for later
 		name<-paste0(input$datasets,"_opls_selection_info")	
@@ -354,10 +354,10 @@ opls <- reactive({
 									validation = input$opls_validation, 
 									method=input$opls_method,
 									progress = FALSE)
-			model.performance<-OSC.validate.model(model = values$opls.results, perm = permutation.results, train = int.test.train.results)
+			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = int.test.train.results)
 			int.test.perf<-model.performance
 		} else {
-			model.performance<-OSC.validate.model(model = values$opls.results, perm = permutation.results, train = NULL)
+			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = NULL)
 			int.test.perf<-model.performance
 		}
 	
@@ -523,7 +523,7 @@ plot.opls <- function(result) {
 	
 	if(input$opls_plot=="feature selection"){ #
 		opts<-values$opls.selected.features
-		plot.S.plot(opts)
+		plot.S.plot(opts,return="all")
 	} 
 	
 	#create non feature

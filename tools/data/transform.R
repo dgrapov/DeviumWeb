@@ -4,6 +4,16 @@ output$tr_columns <- renderUI({
 	selectInput("tr_columns", "Select column(s):", choices  = as.list(cols), selected = NULL, multiple = TRUE)
 })
 
+output$tr_remove_rows_factor<-renderUI({
+		vars <- varnames()
+		fct <- "factor" == getdata_class() 
+		vars <- vars[fct]	
+		if(length(vars) == 0) return()
+		selectInput(inputId = "transform_remove_rows_factor", label = "Factor", choices = c("-----" = "-----", vars), multiple = FALSE)
+})
+
+
+
 output$tr_reorder_levs_rui <- renderUI({
 	if(is.null(input$tr_columns)) return()
 	isFct <- "factor" == getdata_class()[input$tr_columns[1]]
@@ -81,7 +91,7 @@ trans_options <- list("None" = "", "Log" = "log", "Square" = "sq", "Square-root"
 	"Invert" = "inv", "Median split" = "msp", "Deciles" = "dec", "As factor" = "fct",  "As number" = "num", "As integer" = "int", "As character" = "ch",
 	"As date (mdy)" = "d_mdy", "As date (dmy)" = "d_dmy", "As date (ymd)" = "d_ymd")
 
-trans_types <- list("----------" = "", "Change" = "change", "Create" = "create", "Clipboard" = "clip", "Recode" = "recode", "Rename" = "rename", "Reorder columns" = "reorder_cols", "Reorder levels" = "reorder_levs", "Remove" = "remove")
+trans_types <- list("----------" = "", "Change" = "change", "Create" = "create", "Clipboard" = "clip", "Recode" = "recode", "Rename" = "rename", "Reorder columns" = "reorder_cols", "Reorder levels" = "reorder_levs", "Remove Columns" = "remove","Remove Rows" = "removeRows")
 
 ui_Transform <- function() {
 	# Inspired by Ian Fellow's transform ui in JGR/Deducer
@@ -115,9 +125,7 @@ ui_Transform <- function() {
     ),
 
     # actionButton("transfix", "Edit variables in place") # using the 'fix(mtcars)' to edit the data 'inplace'. Looks great from R-ui, not so great from Rstudio
-    conditionalPanel(condition = "input.tr_changeType != ''",
-	    actionButton("addtrans", "Save changes")
-	  ),
+ 
 
     conditionalPanel(condition = "input.tr_changeType == 'reorder_cols'",
     	br(),
@@ -130,7 +138,16 @@ ui_Transform <- function() {
     	HTML("<label>Reorder (drag-and-drop):</label>"),
 	    # returnOrder("tr_reorder_levs", varnames())
 	    uiOutput("tr_reorder_levs_rui")
-    )
+    ),
+	
+	conditionalPanel(condition = "input.tr_changeType == 'removeRows'",
+    	br(),
+		uiOutput("tr_remove_rows_factor"),
+    	selectInput(inputId = "transform_remove_factor_levels", label = "Levels", choices = c("-----" = "-----"), multiple = TRUE)
+	),
+	conditionalPanel(condition = "input.tr_changeType != ''",
+	    actionButton("addtrans", "Save changes")
+	  )
   	), 
 		helpModal('Transform','transform',includeMarkdown("tools/help/transform.md"))
 	)
@@ -306,7 +323,17 @@ observe({
 			changedata_names(input$tr_columns, colnames(dat))
 		} else if(input$tr_changeType == 'reorder_cols') {
 	  	values[[input$datasets]] <- values[[input$datasets]][,input$tr_reorder_cols]
-	  } else {
+		} else if(input$tr_changeType == 'removeRows') {
+			tmp<-getdata()[,input$transform_remove_rows_factor]
+			removeRows<-tmp%in%input$transform_remove_factor_levels
+			#dataset name
+			name<-paste0("filtered_",input$datasets)
+			tmp<-getdata()[!removeRows,,drop=FALSE]
+			
+			values[[name]]<-fixfactors(getdata()[!removeRows,,drop=FALSE])
+			
+			values[["datasetlist"]]<-unique(c(values[["datasetlist"]],name))
+		} else {
 			changedata(dat, colnames(dat))
 		}
 
@@ -321,4 +348,12 @@ observe({
 })
 
 #additions DeviumWeb
+#remove rows based on factor levels
+observe({
+	if(is.null(input$transform_remove_rows_factor)||input$transform_remove_rows_factor=="-----") return()
+	isolate({
+		levels<-levels(getdata()[,input$transform_remove_rows_factor,])
+		updateSelectInput(session = session, inputId = "transform_remove_factor_levels", choices = levels )
+	})
+})
 
