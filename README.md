@@ -1,4 +1,4 @@
-DeviumWeb
+[DeviumWeb](http://spark.rstudio.com/dgrapov/DeviumWeb/#)
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
 ![logo](other/generic_logo)
@@ -7,6 +7,9 @@ DeviumWeb
 ### Download
 - [DeviumWeb v1.0.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) (02/2014)
 - To download the current development version, click the 'Download ZIP' button at the top right of this page. 
+
+To download the current development version: click the 'Download ZIP' button.
+
 
 ### Installation
 
@@ -23,7 +26,6 @@ Unzip the file and then start Devium by running the following code in the R cons
  	# on mac
  	library(shiny)
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
-
 
 ### TODO
 

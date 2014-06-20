@@ -169,6 +169,8 @@ helpModal <- function(title, link, content) {
 
 #get Devium R-scripts for analysis functions
 # source("http://pastebin.com/raw.php?i=JVyTrYRD")
+source("http://pastebin.com/raw.php?i=UyDBTA57")
+
 
 values$debug_on<-TRUE # turn FALSE to remove debugging
 # #source local directory to load devium fxns
