@@ -3,7 +3,13 @@
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
 ![logo](devium_logo.png)
 
-### Install DeviumWeb
+### Download
+
+[DeviumWeb v1.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) 
+- first stable alpha release
+
+
+### Installation
 
 - Required: [R](http://cran.rstudio.com/) (v3.0.1)
 - Required: [Shiny](http://www.rstudio.com/shiny/) (v0.8.0)
@@ -18,11 +24,6 @@ To download, click the 'Download ZIP' button. Unzip the file and then start Devi
  	# on mac
  	library(shiny)
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
-
-### Download
-
-[DeviumWeb v1.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) 
-- first stable alpha release
 
 ### TODO
 
