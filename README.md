@@ -9,9 +9,6 @@
 - [DeviumWeb v1.0.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v1.0.zip/download) (02/2014)
 - To download the current development version, click the 'Download ZIP' button at the top right of this page. 
 
-To download the current development version: click the 'Download ZIP' button.
-
-
 ### Installation
 
 - Required: [R](http://cran.rstudio.com/) (v3.0.1)
