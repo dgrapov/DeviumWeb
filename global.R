@@ -173,17 +173,17 @@ source("http://pastebin.com/raw.php?i=UyDBTA57")
 
 
 values$debug_on<-TRUE # turn FALSE to remove debugging
-# #source local directory to load devium fxns
-source.local.dir<-function(wd){
-	o.dir<-getwd()
-	setwd(wd)
-	files<-dir()[unique(c(agrep(".r",dir()),agrep(".R",dir())))]
-	lapply(1:length(files),function(i) {tryCatch(source(files[i]),error=function(e){paste0("can't load-->",files[i])})
-	})
-	setwd(o.dir)
-}
+# #source local directory to load devium (DEVELOPMENT ONLY)
+#source.local.dir<-function(wd){
+#	o.dir<-getwd()
+#	setwd(wd)
+#	files<-dir()[unique(c(agrep(".r",dir()),agrep(".R",dir())))]
+#	lapply(1:length(files),function(i) {tryCatch(source(files[i]),error=function(e){paste0("can't load-->",files[i])})
+#	})
+#	setwd(o.dir)
+#}
 
-source.local.dir("C:/Users/D/Dropbox/Devium/devium/R")
+#source.local.dir("C:/Users/D/Dropbox/Devium/devium/R")
 
 # Simulate a big data-file
 # n <- 200000
