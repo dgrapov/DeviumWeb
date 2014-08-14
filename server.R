@@ -1,31 +1,12 @@
-# only write if running on developer computer
-# if(file.exists("/Users/vnijs/radyant")) {
-	# dbox_remote <- file.info(list.files(recursive = TRUE, include.dirs = TRUE))
-	# save(dbox_remote, file = "dbox_remote.rda")
-# }
-
-# #load all fxns
-# source('global.R', local = TRUE) # on browser reload loose things stored in global otherwise
-
-# #source Devium functions
-# source('devium.R', local = TRUE)
-
-# # source radyant base functions
-# source('radyant.R', local = TRUE)
-
 
 shinyServer(function(input, output, session) {
 
-
-	
-	#source Devium functions
+	#Devium functions
 	source('devium.R', local = TRUE)
 	
-	# source base functions
+	#radyant functions
 	source('radyant.R', local = TRUE)
 
-	
-	
 	# source data & analysis tools
 	flist_analysis <- sourceDirectory('tools/analysis', recursive = TRUE, modifiedOnly = FALSE) # w/o modifiedOnly = FALSE won't reload when browser refreshes
 	flist_data <- sourceDirectory('tools/data', recursive = TRUE, modifiedOnly = FALSE)
