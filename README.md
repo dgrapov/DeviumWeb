@@ -18,12 +18,34 @@
 
 Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
 
-	# on windows
+	
+	#-------------
+ 	#Load Directly from GitHub
+ 	#-------------
+ 	library(shiny)
+ 	runGitHub("DeviumWeb", "dgrapov")
+	
+	#-------------
+	#Windows
+	#-------------
+	library(shiny)
+	
+	#Stable version
+	shiny::runApp('~/../Desktop/DeviumWeb v0.2.0/DeviumWeb)
+	
+	# Development version
 	library(shiny)
 	shiny::runApp('~/../Desktop/DeviumWeb-master/DeviumWeb-master')
 
- 	# on mac
+	#-------------
+ 	#Mac
+ 	#-------------
  	library(shiny)
+ 	
+ 	#Stable version
+	shiny::runApp('~/Desktop/DeviumWeb v0.2.0/DeviumWeb)
+	
+ 	#Development version
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
 ### TODO
