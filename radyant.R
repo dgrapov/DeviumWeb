@@ -156,7 +156,8 @@ output$summary <- renderPrint({
 
 plotHeight <- function(height = 650) {
 
- 	height <- try(get(input$tool)()[['plotHeight']], silent = TRUE)
+ 	# height <- try(get(input$tool)()[['plotHeight']], silent = TRUE)
+	height <- try(values$plot$'plotHeight')
 	if(is(height, 'try-error') || is.null(height)) {
 		return(650)
 	} else {
@@ -166,7 +167,8 @@ plotHeight <- function(height = 650) {
 
 plotWidth <- function(width = 650) {
 
- 	width <- try(get(input$tool)()[['plotWidth']], silent = TRUE)
+ 	# width <- try(get(input$tool)()[['plotWidth']], silent = TRUE)
+	width <- try(values$plot$'plotWidth')
 	if(is(width, 'try-error') || is.null(width)) {
 		return(650)
 	} else {

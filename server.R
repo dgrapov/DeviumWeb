@@ -4,17 +4,31 @@
 	# save(dbox_remote, file = "dbox_remote.rda")
 # }
 
+# #load all fxns
+# source('global.R', local = TRUE) # on browser reload loose things stored in global otherwise
+
+# #source Devium functions
+# source('devium.R', local = TRUE)
+
+# # source radyant base functions
+# source('radyant.R', local = TRUE)
+
+
 shinyServer(function(input, output, session) {
 
+
+	
 	#source Devium functions
 	source('devium.R', local = TRUE)
 	
 	# source base functions
 	source('radyant.R', local = TRUE)
 
+	
+	
 	# source data & analysis tools
-	flist_analysis <- sourceDirectory('tools/analysis', recursive = TRUE)
-	flist_data <- sourceDirectory('tools/data', recursive = TRUE)
+	flist_analysis <- sourceDirectory('tools/analysis', recursive = TRUE, modifiedOnly = FALSE) # w/o modifiedOnly = FALSE won't reload when browser refreshes
+	flist_data <- sourceDirectory('tools/data', recursive = TRUE, modifiedOnly = FALSE)
 
 	# find the appropriate UI
 	output$ui_finder <- renderUI({

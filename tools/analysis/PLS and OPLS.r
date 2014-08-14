@@ -9,7 +9,6 @@ namel<-function (vec){
 		tmp
 	}
 
-	
 #UI
 output$opls_variables <- renderUI({
   vars <- varnames()
@@ -17,7 +16,7 @@ output$opls_variables <- renderUI({
  	# vars <- vars[isNum]	
   if(length(vars) == 0) return()
   if(!is.null(input$opls_y_var)){vars<-vars[!vars%in%input$opls_y_var]}
-  selectInput(inputId = "opls_var", label = "X variables:", choices = vars, selected = names(vars), multiple = TRUE)
+  selectInput(inputId = "opls_var", label = "X variables:", choices = vars, selected = names(vars), multiple = TRUE, selectize=FALSE)
 })
 
 output$opls_yvariables<-renderUI({

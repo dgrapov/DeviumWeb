@@ -1,15 +1,51 @@
 
+#debugging  stopped working/updating?
+#-------------------
+app.state<-reactive({
+	obj<-get(input$debug_object)
+	str(obj[[input$debug_name]])
+	cat("------------------------\n")
+	obj[[input$debug_name]]
+})
+
+ui_Debug<-function(){
+	list(
+		selectInput(inputId = "debug_object", label = "Object", choices = c("input","values"), selected = "input", multiple = FALSE),
+		selectInput(inputId = "debug_name", label = "Name", choices = "", multiple = FALSE)
+	)
+} 
+
+debug.names<-reactive({
+	
+	tryCatch(names(get(input$debug_object)),error=function(e){return()})
+
+})
+
+observe({
+	updateSelectInput(session, "debug_name", choices = debug.names() )
+})
 
 #debugging  print all names and values in input
 output$debug<- renderPrint({
-	obj<-names(input)
+	if(is.null(input)) return()
+	# if(input$debug_action==0) return()
+	# obj<-names(input)
+	# input.obj<-lapply(1:length(obj), function(i) { input[[obj[i]]]})
+	# names(input.obj)<-obj
+	# obj<-names(values)
+	# values.obj<-lapply(1:length(obj), function(i) { values[[obj[i]]]})
+	# names(values.obj)<-obj
+	app.state()
+})
+
+#function to copy all contents of input
+copy.input<-function(){
+	obj<-tryCatch(names(get("input")),error=function(e){return()})
 	input.obj<-lapply(1:length(obj), function(i) { input[[obj[i]]]})
 	names(input.obj)<-obj
-	obj<-names(values)
-	values.obj<-lapply(1:length(obj), function(i) { values[[obj[i]]]})
-	names(values.obj)<-obj
-	return(list(input = input.obj,values = values.obj))
-})
+	return(input.obj)
+}
+
 
 #helper for data transposing mechanism, which was a horrible idea!
 rdy.t<-function(obj){

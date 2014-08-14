@@ -8,8 +8,8 @@
 options(digits = 3)
 
 # creating a reactivevalues store 
+#-----------------------
 values <- reactiveValues()
-
 values[['running_app_local']] <- FALSE
 if(Sys.getenv('SHINY_PORT') == "") {
   # options(shiny.maxRequestSize=1000000*1024^2)
@@ -18,25 +18,43 @@ if(Sys.getenv('SHINY_PORT') == "") {
   values[['running_app_local']] <- TRUE
 }
 
-# main install happens in update.R now. this is just to 
+#load Devium fxns
+#-----------------------
+# source("http://pastebin.com/raw.php?i=UyDBTA57") # from github, hack, should make library
+#source local directory to load devium fxns 
+source.local.dir<-function(wd){
+	o.dir<-getwd()
+	setwd(wd)
+	files<-dir()[unique(c(agrep(".r",dir()),agrep(".R",dir())))]
+	lapply(1:length(files),function(i) {tryCatch(source(files[i]),error=function(e){paste0("can't load-->",files[i])})
+	})
+	setwd(o.dir)
+}
+source.local.dir(paste0(getwd(),"/R"))
+
+# R package dependencies
+#-----------------------
 options(repos = c(CRAN = "http://cran.rstudio.com"))
-source('libs.R', local = TRUE)
-
-# # available <- suppressWarnings(suppressPackageStartupMessages(sapply(libs, require, character.only=TRUE)))
-# available <- suppressWarnings(sapply(libs, require, character.only=TRUE))
-# inst.libs <- libs[available == FALSE]
-# if(length(inst.libs) != 0) {
-  # install.packages(inst.libs, dependencies = TRUE)
-	# # suppressWarnings(suppressPackageStartupMessages(sapply(inst.libs, require, character.only=TRUE)))
-  # suppressWarnings(sapply(inst.libs, require, character.only=TRUE))
-# }
-
+source('libs.R', local = TRUE) # R package dependencies, holds function to load
 #load all R packages
 check.get.packages(libs)
 
+# Demo datasets
+#-----------------------
+robj <- load("data/mtcars.rda") 
+values[["mtcars"]] <- data.frame(get(robj[1]))
+values[["mtcars_descr"]] <- get(robj[2])
 
+# diamonds <- NULL
+robj <- load("data/diamonds.rda") 
+values[["diamonds"]] <- data.frame(get(robj[1]))
+values[["diamonds_descr"]] <- get(robj[2])
+
+values$datasetlist <- c("mtcars", "diamonds")
+
+
+# custom fxns/options from radyant
 panderOptions('digits',3)
-
 # binding for a text input that only updates when the return key is pressed
 returnTextInput <- function(inputId, label, value = "") {
   tagList(
@@ -66,63 +84,7 @@ returnOrder <- function(inputId, vars) {
   )
 }
 
-
-# unloading because it messes with method of some other packages
-# would prefer to use import From but ...
-#----!!!IMPORTANT !#--- may cause radyant problems
-# detach("package:Hmisc", unload=TRUE) # radyant problems with this
-#----------
-
-
-# mtcars <- NULL
-robj <- load("data/mtcars.rda") 
-
-# setting up a few standard datasets to play with 
-# mtcars$vs <- as.factor(mtcars$vs)
-# mtcars$am <- as.factor(mtcars$am)
-
-values[["mtcars"]] <- data.frame(get(robj[1]))
-values[["mtcars_descr"]] <- get(robj[2])
-
-# diamonds <- NULL
-robj <- load("data/diamonds.rda") 
-values[["diamonds"]] <- data.frame(get(robj[1]))
-values[["diamonds_descr"]] <- get(robj[2])
-
-values$datasetlist <- c("mtcars", "diamonds")
-#using datasets in main code n
-
-# loading list of data.frame in the car package
-# listPackData <- function(packs) {
-# 	libnames <- c('')
-# 	lib <- c('')
-# 	for(ipack in packs) {
-# 		ilib <- data(package = ipack)$results
-# 		libnames <- c(libnames, paste(ilib[,'Package'],ilib[,'Item'], sep = '-'))
-# 		lib <- c(lib,ilib[,'Item'])
-# 	}
-# 	names(lib) <- libnames
-# 	as.list(lib)
-# }
-
-# packDataSets <- listPackData(c('AER','Ecdat'))
-
-# pds <- list()
-# for(pd in 2:length(packDataSets)) {
-# 	data(list = packDataSets[[pd]])
-# 	dat <- get(packDataSets[[pd]])
-# 	if(!is.null(colnames(dat))) {
-# 		pds <- c(pds,packDataSets[pd])
-# 	}
-# }
-# # packDataSets <- packDataSets[-which(packDataSets == "DutchSales")]
-# # packDataSets <- c(list(''=''),pds)
-# packDataSets <- c('',pds)
-# save(packDataSets, file = '~/Desktop/packDataSets.rda')
-
-# load('data/packDataSets.rda')
-# lastLoaded <- "" 		
-
+#navbar
 getTool <- function(inputId) {
   tagList(
     tags$head(tags$script(src = "js/navbar.js")),
@@ -166,27 +128,3 @@ helpModal <- function(title, link, content) {
   HTML(html)
 }
 
-
-#get Devium R-scripts for analysis functions
-# source("http://pastebin.com/raw.php?i=JVyTrYRD")
-source("http://pastebin.com/raw.php?i=UyDBTA57")
-
-
-values$debug_on<-TRUE # turn FALSE to remove debugging
-# #source local directory to load devium fxns
-source.local.dir<-function(wd){
-	o.dir<-getwd()
-	setwd(wd)
-	files<-dir()[unique(c(agrep(".r",dir()),agrep(".R",dir())))]
-	lapply(1:length(files),function(i) {tryCatch(source(files[i]),error=function(e){paste0("can't load-->",files[i])})
-	})
-	setwd(o.dir)
-}
-
-source.local.dir("C:/Users/D/Dropbox/Devium/devium/R")
-
-# Simulate a big data-file
-# n <- 200000
-# n.var <- 100
-# bigsimdat <- data.frame(matrix(rnorm(n*n.var),nrow = n, ncol <- n.var))
-# save(bigsimdat,file = "data/bigsimdat.rda")

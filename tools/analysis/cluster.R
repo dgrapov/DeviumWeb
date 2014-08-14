@@ -35,7 +35,7 @@ rdy.t<-function(obj){
 output$hc_vars <- renderUI({
   vars <- varnames2()
   if(is.null(vars)) return()
-  selectInput(inputId = "hc_vars", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE)
+  selectInput(inputId = "hc_vars", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE,selectize=FALSE)
 })
 
 # annotation variable selection - hclustering
@@ -107,7 +107,7 @@ hc_dist_method <-  c("none","euclidean", "maximum", "manhattan", "canberra", "bi
 # output$caption<-renderText({c(input$hc_group_vars)})
 
 #plot type
- plot_control_hclustering<-function(){
+plot_control_hclustering<-function(){
 	tags$details(
 		radioButtons(inputId = "hclustering_plot_heatmap", label = "Plot type:", choices = c("heatmap","dendrogram"), selected = "heatmap")
 	)		

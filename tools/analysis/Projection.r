@@ -16,7 +16,7 @@ output$pca_variables <- renderUI({
  	# vars <- vars[isNum]
   if(length(vars) == 0) return()
   # selectInput(inputId = "pca_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE)
-  selectInput(inputId = "pca_var", label = "Variables:", choices = vars, multiple = TRUE)
+  selectInput(inputId = "pca_var", label = "Variables:", choices = vars, multiple = TRUE, selectize=FALSE)
 })
 
 output$pca_groups<-renderUI({

@@ -19,7 +19,7 @@ output$summary_variables <- renderUI({
 	isNum <- "numeric" == getdata_class() | "integer" == getdata_class() | "logical" == getdata_class()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
-  selectInput(inputId = "sum_var", label = "Data:", choices = vars, selected = names(vars), multiple = TRUE)
+  selectInput(inputId = "sum_var", label = "Data:", choices = vars, selected = names(vars), multiple = TRUE, selectize=FALSE)
   # selectInput(inputId = "sum_var", label = "Data:", choices = vars,  multiple = TRUE)
 })
 
@@ -161,7 +161,7 @@ output$ttest_variables <- renderUI({
 	isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
-  selectInput(inputId = "ttest_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE)
+  selectInput(inputId = "ttest_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE, selectize=FALSE)
 })
 
 ui_ttest <- function() {
@@ -238,7 +238,7 @@ output$anova_variables <- renderUI({
 	isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
-  selectInput(inputId = "anova_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE)
+  selectInput(inputId = "anova_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE, selectize=FALSE)
 })
 
 ui_anova <- function() {
