@@ -499,6 +499,7 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=TRUE,
     return(datac)
 }
 
+
 #get ellipse boundaries
 get.ellipse.coords<-function(obj,group=NULL, ellipse.level=.95){
 		check.get.packages(c("ellipse","splancs"))
@@ -530,17 +531,22 @@ get.ellipse.coords<-function(obj,group=NULL, ellipse.level=.95){
 		#avoiding issues with x/y as factors
 		obj<-data.frame(matrix(as.numeric(as.matrix(tmp[,1:2])),ncol=2),tmp[,3])
 		colnames(obj)<-c("x","y","group")
+		#may need to maintain ordered factor levels
+		obj$group<-factor(obj$group,levels=levels(fct),ordered=is.ordered(fct))
 		return(list(coords=data.frame(obj), area=ellipse.size))	
 	}		
 	
 #get polygon coordinates for each group
 get.polygon.coords<-function(obj,group){ 
 		require(plyr)
-		fct<-if(is.null(group)) data.frame(fct=as.factor(rep(1,nrow(obj)))) else data.frame(fct=factor(join.columns(group)))
-		obj<-cbind(obj,fct)
-		chull.bounds <- ddply(obj, .(fct), function(x) data.frame(x[chull(as.matrix(x)),]))
+		fct<-if(is.null(group)) data.frame(fct=as.factor(rep(1,nrow(obj)))) else factor(unlist(group))
+		obj<-data.frame(obj,fct)
+		.chull<-function(x){tryCatch(chull(x),error=function(e){NA})} # 
+		chull.bounds <- data.frame(ddply(obj, .(fct), function(x) data.frame(x[.chull(as.matrix(x)),])))
 		
 		colnames(chull.bounds)<-c("x","y","group")	
+		#may need to maintain ordered factor levels
+		chull.bounds$group<-factor(chull.bounds$group,levels=levels(fct),ordered=is.ordered(fct))
 		return(chull.bounds)	
 }
 
@@ -562,6 +568,17 @@ get.polygon.coords<-function(obj,group){
   cat("Usage: rescale(x,newrange)\n")
   cat("\twhere x is a numeric object and newrange is the min and max of the new range\n")
  }
+}
+
+
+#function to split factors on character and maintain factor order based on combined 
+# because too lazy to create correct geom for ggplot2
+char.split.factor<-function(factor,character="\\|"){
+	order<-as.matrix(do.call("rbind",strsplit(fixlc(levels(factor)),character)))
+	obj<-data.frame(do.call("rbind",strsplit(fixlc(factor),character)))
+	x<-data.frame(lapply(1:ncol(obj),function(i) {factor(obj[,i],levels=unique(order[,i]),ordered=is.ordered(factor))}))
+	colnames(x)<-1:ncol(x)
+	return(x)
 }
 
 #make summary plot for all variables as boxplot
@@ -592,3 +609,97 @@ summary.boxplot<-function(data,group){
 	print(grid.arrange(p1,p2,ncol = 1))
 }
 
+#volcano plot
+volcano.plot<-function(FC=tmp$FC,p.value=tmp$p.value,labels=1:length(FC),FC.lim=3,p.value.lim=.05,size=2,alpha=.5,x.offset=.1,y.offset=.1,text.angle=45){
+
+	#convert to log (non-log makes less sense and is harder to implement
+	t.p.lim<--log(p.value.lim)
+	t.FC.lim<-log2(FC.lim)
+	y.lab<-ylab('-log10 Statistic') 
+	x.lab<-xlab('log2 Fold Change')
+	FC<-log(FC,base=2)
+	p.value<--log(p.value)
+	factor<-factor(FC>=t.FC.lim&p.value>t.p.lim|FC<(t.FC.lim*-1)&p.value>t.p.lim)
+	
+	labels[factor!=TRUE]<-""
+	angle<-rep(360-text.angle,length(FC))
+	angle[FC>=t.FC.lim]<-text.angle
+	xlab<-rep(x.offset,length(FC))
+	xlab[FC>=t.FC.lim]<--x.offset
+	ylab<-rep(y.offset,length(FC))
+
+
+	.theme<- theme(
+					axis.line = element_line(colour = 'gray', size = .75), 
+					panel.background = element_blank(),  
+					plot.background = element_blank(),
+					panel.grid.minor = element_line(colour="gray", size=0.05,linetype=2),
+					panel.grid.major = element_line(colour="gray", size=0.05,linetype=2),
+					legend.background=element_rect(fill='white'),
+					legend.key = element_blank()
+					 )	 
+
+
+
+	tmp<-data.frame(FC,p.value,labels,factor,angle,xlab,ylab)	
+	
+	p<-ggplot(tmp, aes(x=FC,y=p.value,color=factor)) + geom_point(alpha=alpha,size=size)+ geom_text(aes(x=FC-xlab,y=p.value+ylab,angle=angle,label=labels),color="black",size=size+1,show_guides=FALSE)+
+	geom_vline(xintercept = t.FC.lim*c(-1,1),linetype=2,size=.75,color="red") +
+	geom_hline(yintercept = t.p.lim,linetype=2,size=.75,color="red")+scale_color_manual(name="Selected", values=c("blue","orange")) + 
+	y.lab + x.lab +.theme + guides(color = guide_legend(override.aes = list(size = 5))) + ggtitle(paste0(sum(na.omit(factor==TRUE))," variables selected"))
+
+
+	print(p)
+
+}
+
+#empty place holder plot 
+empty.plot<-function(text=NULL){
+	plot.new()
+	title(text)
+}
+
+#tests
+test<-function(){
+obj<-data.frame(matrix(c(rnorm(100,0,1),rnorm(100,1,1)),100,2,byrow=TRUE))
+colnames(obj)<-c("x","y")
+obj$group<-factor(rep(c(1:4),each=25),label=c(4:1),levels=c(1:4),ordered=TRUE)#(c(1:4),100,replace=TRUE)
+colnames(obj)
+get.ellipse.coords(obj=as.matrix(obj[,1:2]), group=obj$group)
+
+get.polygon.coords(obj=as.matrix(obj[,1:2]), group=obj$group)
+
+obj$group<-join.columns(data.frame(factor(rep(c(1:4),each=25),label=c(4:1),levels=c(1:4),ordered=TRUE),round(runif(nrow(obj)))))
+
+
+ggplot(x$coords,aes(x=x,y=y,fill=group,color=group)) + geom_polygon(alpha=.25)+
+geom_point(data=obj,aes(x=X1,y=X2))
+
+factor<-join.columns(data.frame(factor(rep(c(1:4),each=25),label=c(4:1),levels=c(1:4),ordered=TRUE),round(runif(nrow(obj)))))
+factor<-factor(factor,levels=c("1|1","4|1","4|0","1|0","2|0","2|1","3|0","3|1"),ordered=TRUE)
+
+p<-ggplot(obj,aes(x=x, y=y, z= as.numeric(group),color=group,fill=group)) +geom_point() 
+p+stat_binhex()+stat_ellipse(geom="polygon") +stat_smooth()
+stat_contour(geom="polygon")
+
+stat_ellipse(geom="polygon") +
+facet_grid(group~.)
+
+x<-cbind(factor,char.split.factor(factor))
+
+v + stat_contour(geom="polygon")
+
+
+#create volcanoe plot
+FC=abs(rnorm(100,0,1))
+p.value=rnorm(100,1,.25)
+log<-FALSE
+FC.lim=3
+p.value.lim=1
+labels=1:length(FC)
+volcano.plot(FC,p.value,1:length(tmp$FC),FC.lim=FC.lim,p.value.lim=p.value.lim,x.offset=.1,y.offset=.1, angle=45)
+
+summary.boxplot()
+
+
+}

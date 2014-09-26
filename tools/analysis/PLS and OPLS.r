@@ -21,7 +21,19 @@ output$opls_variables <- renderUI({
 
 output$opls_yvariables<-renderUI({
   vars <- varnames()
-  selectInput(inputId = "opls_y_var", label = "Y variables:", choices = vars, multiple = TRUE)
+  selectInput(inputId = "opls_y_var", label = "Y variables:", choices = vars, multiple = FALSE)
+})
+
+#observe Y and set defaults for OLPS discriminant analysis
+observe({
+	if(is.null(input$opls_y_var)) return()
+	isolate({
+		#detect if discriminant analysis
+		#for now limit to 2 group comparisons
+		tmp<-unique(fixlc(getdata()[,input$opls_y_var]))
+		values$is.OPLSDA<-if(length(tmp)==2) TRUE else FALSE
+	})
+
 })
 
 output$opls_trainindex<-renderUI({
@@ -35,11 +47,10 @@ vars <- varnames()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
  
-  selectInput(inputId = "opls_groups", label = "Visualization variables:", choices = c("none",vars), selected = "none", multiple = TRUE)
+  selectInput(inputId = "opls_groups", label = "Visualization variables:", choices = vars, multiple = TRUE)
 })
 
 output$opls_pcs<-renderUI({
-		
 		maxPCs<-ncol(getdata())
 		numericInput("opls_pcs", "Latent variables", value=2, min = 2, max = maxPCs)
 	})
@@ -63,7 +74,7 @@ ui_opls <- function() {
   	wellPanel(
 		conditionalPanel(condition = "input.analysistabs=='Plots'",downloadButton('Download_opls_plot', label = "Download plot")),
 		br(),
-		h4('Calculate'),
+		h3('Calculate'),
 		tags$details(tags$summary("Model"),
 		uiOutput("opls_yvariables"), # Y works best for single y
 		uiOutput("opls_variables"), # variables
@@ -106,7 +117,7 @@ ui_opls <- function() {
 			checkboxInput("opls_feature_selection_separate","separate signs",FALSE)
 			)
 		),
-		h4('Plot'),
+		h3('Plot'),
 			tags$details(tags$summary("Options"),	
 				selectInput("opls_plot","Plot type",
 					list ("RMSEP" 	= "RMSEP",
@@ -114,7 +125,7 @@ ui_opls <- function() {
 					"Loadings" 		= "loadings",
 					"Biplot" 		= "biplot",
 					"multi-RMSEP" 	= "osc.RMSEP",
-					"multi-Scores" 	= "osc.scores"),selected="Scores"),
+					"multi-Scores" 	= "osc.scores"),selected="RMSEP"),
 					# "multi-Loadings"= "osc.loadings",
 					# "multi-Weights" = "osc.delta.weights"),
 				conditionalPanel(condition = "input.opls_plot == 'scores'|input.opls_plot == 'biplot'|input.opls_plot == 'osc.scores'|input.opls_plot == 'loadings'",#condition = "input.opls_plot != 'RMSEP'",
@@ -145,7 +156,7 @@ ui_opls <- function() {
 						)		
 				)
 			),	
-		h4('Save'),
+		h3('Save'),
 			tags$details(tags$summary("Objects"),
 				selectInput("opls_result_obj","",choices=c("-----" = ""),selected = "-----",multiple=TRUE),#,values[["opls_objects"]]$return_obj_name),
 				actionButton("save_opls_result_obj", "Save")
@@ -168,7 +179,7 @@ observe({
 	if(!is.null(input$opls_feature_selection_type))	{			
 		if(!input$opls_feature_selection_type=="none")	{tmp<-c(tmp,"feature selection"="feature selection")}		
 	}
-	updateSelectInput(session, "opls_plot", choices=tmp)
+	updateSelectInput(session, "opls_plot", choices=tmp,selected=tmp[1])
 })	
 
 summary.opls <- function(result) {
@@ -190,6 +201,8 @@ opls <- reactive({
 	#check for factors and convert to numeric
 	pls.y<-do.call("cbind",lapply(1:ncol(y),function(i){as.numeric(y[,i])})) # convert to numeric
 	colnames(pls.y)<-colnames(y)
+	#check for discriminant analysis
+	is.OPLSDA<-if(is.null(values$is.OPLSDA)) FALSE else values$is.OPLSDA
 	
 	# X/DATA
 	opls.data <- getdata()[,input$opls_var,drop=FALSE]
@@ -215,6 +228,7 @@ opls <- reactive({
 						method=input$opls_method, 
 						cv.scale=cv.scale, 
 						train.test.index=NULL,
+						OPLSDA=is.OPLSDA,
 						progress=FALSE)					
 	final.opls.results<-values$final.opls.results<-get.OSC.model(obj=values$opls.results,OSC.comp=input$opls_o_pcs)		
 	#report basic model stats
@@ -229,7 +243,8 @@ opls <- reactive({
 	rownames(mod.description)<-c("Dependent Variables","Latent variables (LVs)","Orthogonal latent variables (OLVs)","model cross-validation", "method")				
 	opls.model.text<-data.frame("Xvar"=c(0,round(cumsum(values$final.opls.results$Xvar)*100,2)),"Q2"=values$final.opls.results$Q2,"RMSEP"= values$final.opls.results$RMSEP)	
 	rownames(opls.model.text)<-c("intercept",paste0("LV ",1:input$opls_pcs))
-	
+	#OPLSDA text
+	OPLSDA.text<-if(is.OPLSDA) data.frame(values$final.opls.results$OPLSDA.stats) else NULL
 		
 	#feature selection
 	#---------------------------
@@ -333,12 +348,13 @@ opls <- reactive({
 			}
 	} else {int.train.test.index<-NULL}
 			
-	#permutation testing (may use int.test.train.index)
+	#permutation testing (may use int.test.train.index) #TODO: switch to updated function
 	if(input$opls_n_tests>0&input$opls_permutation==TRUE){
 		permutation.results<-values$opls.permutation.results<-permute.OSC.PLS(data = scaled.data, y = pls.y, 
 			n = input$opls_n_tests, ncomp = input$opls_pcs, 
 			osc.comp = input$opls_o_pcs, 
 			train.test.index = int.train.test.index,
+			OPLSDA=is.OPLSDA,
 			progress = FALSE)
 	} else {
 		permutation.results<-NULL
@@ -352,11 +368,14 @@ opls <- reactive({
 									cv.scale = cv.scale,
 									validation = input$opls_validation, 
 									method=input$opls_method,
+									OPLSDA=is.OPLSDA,
 									progress = FALSE)
-			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = int.test.train.results)
+							
+			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = int.test.train.results,test="perm.test2")
 			int.test.perf<-model.performance
 		} else {
-			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = NULL)
+			
+			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = NULL,test="perm.test2")
 			int.test.perf<-model.performance
 		}
 	
@@ -432,7 +451,7 @@ opls <- reactive({
 	opls_result_objects<-c(opls_result_objects,name)
 	
 	values$opls_result_objects<-unlist(unique(opls_result_objects)) #all results
-	return(list(description=mod.description,statistics = opls.model.text,"Validated Model Performance (Y1)"=int.test.perf,selected.features=summary.selected.features))
+	return(list(description=mod.description,statistics = opls.model.text,OPLSDA=OPLSDA.text,"Validated Model Performance (Y1)"=int.test.perf,selected.features=summary.selected.features))
 	
 })
 

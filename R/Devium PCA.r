@@ -137,6 +137,7 @@ plot.PCA<-function(pca,xaxis=1,yaxis=2, results = c("screeplot","scores","loadin
 								if(is.null(color)){
 										tmp$color<-"gray"
 									}else{
+										
 										tmp$color<-as.factor(color[,])
 										if(is.null(legend.name)){legend.name<-colnames(color)}
 								}

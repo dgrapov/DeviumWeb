@@ -13,7 +13,7 @@ calc.mRSD<-function(data,batch=data.frame(1:nrow(data)),summary.range=seq(0,100,
 	#parametric summary
 	b.m<-ddply(tmp,.(batch),colwise(mean))
 	b.s<-ddply(tmp,.(batch),colwise(sd))
-	b.rsd<-b.s/b.m*100
+	b.rsd<-abs(b.s/b.m*100) # ignore negative and positive RSDs due to mean
 	b.rsd[,1]<-b.m[,1]
 	
 	
@@ -204,41 +204,57 @@ summary.boxplot2<-function(val,groups=NULL,split.on=NULL,theme=NULL,se=FALSE,spa
 }
 
 #create summary plot RSD% analyte mean
-RSD.means.plot<-function(obj=list(gc.perf.raw,gc.raw.t1),name=c("Raw","FAME L2 norm"),size=3,alpha=.75,use.log=TRUE,se=FALSE,theme=NULL,extra=NULL){
+RSD.means.plot<-function(obj=list(gc.perf.raw,gc.raw.t1),type="variable",name=c("Raw","FAME L2 norm"),size=3,alpha=.75,use.log=TRUE,se=FALSE,points=TRUE,theme=NULL,extra=NULL,label=FALSE,label.size=2,span=.75){
 	
 	library(ggplot2)
 	#check if many or single object
-	if(length(names(obj))==7){obj<-list(obj)}
+	if(is.data.frame(obj)){obj<-list(obj)} 
 	
 	#obj can be a list of objects produced by calc.mRSD
 	#name will be used for legends
+	#switch between samples and variables
 	res<-lapply(1:length(obj),function(i){
-		tmp<-obj[[i]]		
-		res<-data.frame(method=name[i],RSD=tmp$variable.RSD[,1],mean=apply(tmp$batch.means[-1],2,mean,na.rm=TRUE))
+		tmp<-obj[[i]]	
+		#switch between samples and variables
+		if(type=="variable"){	
+			res<-data.frame(method=name[i],RSD=tmp$variable.RSD[,1],mean=apply(tmp$batch.means[-1],2,mean,na.rm=TRUE),labels=rownames(tmp$variable.RSD))
+		} else {
+			#for samples the mean is the sum of all variables
+			res<-data.frame(method=name[i],RSD=tmp$batch.RSD[,1],mean=apply(tmp$batch.means[-1],1,sum,na.rm=TRUE),labels=rownames(tmp$batch.means))
+		}	
 		res$log.mean<-log(res$mean+1)
 		res
 	})
 	
+	if(type=="variable"){
+		y.lab<-"Mean"
+	} else{
+		y.lab<-"Sum"
+	}
+	
+	lab.data<-if(label) geom_text(aes(label=labels),size=label.size,show_guide=FALSE) else NULL
+	
 	vis.data<-do.call("rbind",res)
-	
+	legend<-TRUE
 	if(use.log){
-		p<-ggplot(vis.data,aes(x=log.mean,y=RSD,group=method,color=method,fill=method))+ 
-		stat_smooth(method = "loess", size = 1,show_guide=FALSE ,se = se,alpha=.75)+
-		geom_point(alpha=alpha,size=size) + 
-		theme + xlab("log Mean")+ ylab("RSD")+extra #+scale_color_manual(values=rainbow(3))+
-		print(p)
-	
+		p<-ggplot(vis.data,aes(x=log.mean,y=RSD,group=method,color=method,fill=method))
+		if(points){p<-p+geom_point(alpha=alpha,size=size) ;legend<-FALSE}
+		p<-p+stat_smooth(method = "loess", size = 1,show_guide=legend ,se = se,alpha=.75,span=span) +
+		theme + xlab(paste0("log ",y.lab))+ ylab("RSD") + lab.data +
+		extra #+scale_color_manual(values=rainbow(3))+
+		print(p)	
 	} else {
-		p<-ggplot(vis.data,aes(x=mean,y=RSD,group=method,color=method,fill=method))+ 
-		geom_point(alpha=.75)+ 
-		stat_smooth(method = "loess", size = 1,show_guide=FALSE ,se = se,alpha=.75)+ 
-		theme + xlab("Mean")+ ylab("RSD")+extra #+scale_color_manual(values=rainbow(3))+
+		p<-ggplot(vis.data,aes(x=mean,y=RSD,group=method,color=method,fill=method))
+		if(points){p<-p+geom_point(alpha=.75) ;legend<-FALSE }
+		p<-p + stat_smooth(method = "loess", size = 1,show_guide=legend ,se = se,alpha=.75,span=span)+ 
+		theme + xlab(y.lab)+ ylab("RSD") + lab.data +
+		extra #+scale_color_manual(values=rainbow(3))+
 		print(p)
 	}
 }	
 
 #bar plot to summarize performance
-RSD.counts.plot<-function(obj,show="variable",plot.obj="count",name="",theme=NULL,extra=NULL,ylabel="number of metabolites"){
+RSD.counts.plot<-function(obj,show="variable",plot.obj="count",name="",theme=NULL,extra=NULL,ylabel="number of metabolites",barplot=TRUE){
 	
 	if(show=="variable"){
 		#variables
@@ -270,9 +286,15 @@ RSD.counts.plot<-function(obj,show="variable",plot.obj="count",name="",theme=NUL
 	upper<-max(vis.data$plot.obj)
 	ulim<-if(upper>=10){10} else {upper}
 	dlim<-if(upper>=10){2} else {1}
-	ggplot(data=vis.data,aes(x=interval,y=plot.obj,fill=method,group=method))+ geom_bar(position=position_dodge(),stat="identity")+ theme +
+	p<-ggplot(data=vis.data,aes(x=interval,y=plot.obj,fill=method,group=method))
+	if(barplot){
+		p<-p+geom_bar(position=position_dodge(),stat="identity") 
+	} else {	
+		p<-p+geom_bar(position=position_dodge(),stat="identity") 
+	}
+	p<- p+ theme +
 	scale_y_continuous(minor_breaks = seq(0 , upper, dlim), breaks = seq(0, upper, ulim)) + xlab("RSD")+ylab(ylabel)+ extra #scale_fill_brewer(palette="Set1")
-	
+	print(p)
 }
 
 #conduct LOESS normalization on a data frame or matrix
@@ -359,51 +381,88 @@ loess.correlation<-function(data,y,train,span=0.75,n=nrow(data),plot=FALSE,cor.m
 }
 
 
+# #test
+# test<-function(){
+
+# #simulate replicated measurements
+# sim.replicated<-function(nsamples=10,ngroups=2,nvariables=10,sd.mag=.25,mag=c(1,100),effect=1){
+	# var.m<-sample(mag[1]:mag[2],nvariables,replace=TRUE)
+	
+	# sample.ids<-rep(1:ngroups,each=nsamples)
+	# results<-do.call("cbind",lapply(1:nvariables,function(i){
+		# v.mean<-var.m[i]
+		# g.mean<-seq(v.mean,(v.mean+v.mean*(effect*sd.mag)),length.out=ngroups)
+		# unlist(lapply(1:ngroups,function(j){
+			# rnorm(nsamples,g.mean[j],g.mean[j]*sd.mag)
+		# }))
+	# }))
+	# colnames(results)<-paste0("var",1:nvariables)
+	# data.frame(group=factor(paste0("Batch ",sample.ids)),results)
+# }
+
+# #create simulated data
+# rep.data<-sim.replicated(nsamples=10,ngroups=10,nvariables=10,sd.mag=.25,mag=c(1,100),effect=.5)
+# rep.data<-data.frame(rep.data[,1],scale(rep.data[,-1])
+
+# write.csv(rep.data,"replicated data.csv")
+# #plots
+# library(ggplot2)
+# .theme1<- theme(
+			# axis.line = element_line(colour = 'gray', size = .75), 
+			# panel.background = element_blank(), 
+			# plot.background = element_blank(),
+			# axis.text.x = element_text(size = 10),
+			# axis.text.y = element_text(size = 10),
+			# axis.title.x = element_text(size=15),
+			# axis.title.y = element_text(size=15),
+			# # axis.text.x = element_blank(),
+			# # axis.ticks.x = element_blank(),
+			# legend.key = element_blank()
+		 # )
+# #for boxplots		 
+# .theme2<- theme(
+			# axis.line = element_line(colour = 'gray', size = .75), 
+			# panel.background = element_blank(), 
+			# plot.background = element_blank(),
+			# axis.text.x = element_blank(),#element_text(size = 10),
+			# axis.text.y = element_text(size = 10),
+			# axis.title.x = element_text(size=15),
+			# axis.title.y = element_text(size=15),
+			# # axis.text.x = element_blank(),
+			# # axis.ticks.x = element_blank(),
+			# legend.key = element_blank()
+			# # legend.position="none"
+		 # )	
+
+# #prepare data
+# rep.id<-factor(rep.data[,1])
+# tmp.data<-rep.data[,-1] +20		 
+		 
+# #%RSD stats for samples and variables
+# RSD<-calc.mRSD(data=data.frame(tmp.data),batch=data.frame(rep.id)) # raw data
+
+# #plot % RSD vs. mean scatter plot
+
+# RSD.means.plot(obj=list(RSD),type="variable",name=c("Raw"),theme=.theme1,label=TRUE,use.log=TRUE)
+# RSD.means.plot(obj=list(RSD),type="sample",name=c("Raw"),theme=.theme1)
+
+# #create summary objects
+# RSD.summary<-summarize.performance(obj=RSD,sig.figs=2)
+
+# #bar plot
+# RSD.counts.plot(obj=list(RSD.summary),show="variable",name=c("Raw"),theme=.theme1,ylabel="number of metabolites")
+# RSD.counts.plot(obj=list(RSD.summary),show="sample",name=c("Raw"),theme=.theme1,ylabel="number of batches") # control y axis scale_y_continuous(
+
+# #plot trend across batches for a single variable
+# #could use z-scores and plot multiple analytes on the same graph
+# best<-sample(1:ncol(tmp.data),1)	#select variable to view
+# summary.lineplot(val=tmp.data[,best,drop=F],groups=NULL,theme=.theme2)
+# summary.lineplot(val=tmp.data[,best,drop=F],groups=data.frame(rep.id),theme=.theme2)
+
+# #boxplot
+# summary.boxplot2(val=tmp.data[,best,drop=F],groups=rep.id,split.on=rep.id,theme=.theme2)
+
+# #%RSD stats
 
 
-#test
-test<-function(){
-tmp.data<-structure(list(x = c(1449, 1449, 1141, 1199, 1477, 1503, 1559, 
-1606, 1582, 1447, 1474, 1644, 1478, 1565, 1489, 948, 1360, 1421, 
-1197, 1358, 1240, 1175, 1248, 1330, 604, 760, 1002, 935, 1189, 
-1049, 1398, 1285, 1646, 1371, 1589, 1109, 859, 1317, 1166, 1174, 
-1190, 1891, 1069, 863, 1322, 826, 1172, 1091, 1285, 1063, 895, 
-1259, 651, 949, 1143, 1656, 800, 1237, 1134, 282, 1264, 1241, 
-905, 1059, 951, 1228, 1178, 998, 1574, 1467, 1076, 791, 933, 
-1643, 1786, 2408, 2631, 2098, 851, 1473, 954, 1217, 2151, 1901, 
-1253, 1359, 1513, 1093, 1639, 1152, 1585, 1021, 1109, 1034, 1333, 
-1397, 1244, 1404, 1201, 1222, 1128, 1186, 1286, 1243, 1134), 
-    y = c(1L, 12L, 23L, 34L, 45L, 56L, 67L, 78L, 89L, 100L, 111L, 
-    122L, 133L, 144L, 155L, 176L, 177L, 188L, 199L, 210L, 221L, 
-    232L, 242L, 253L, 264L, 275L, 286L, 297L, 319L, 329L, 331L, 
-    332L, 363L, 367L, 375L, 395L, 406L, 417L, 428L, 439L, 450L, 
-    451L, 462L, 473L, 484L, 495L, 505L, 516L, 527L, 537L, 563L, 
-    575L, 585L, 607L, 633L, 660L, 674L, 703L, 708L, 719L, 729L, 
-    740L, 751L, 762L, 773L, 784L, 795L, 806L, 817L, 828L, 839L, 
-    850L, 861L, 872L, 883L, 894L, 905L, 916L, 927L, 938L, 956L, 
-    967L, 971L, 982L, 1004L, 1016L, 1022L, 1039L, 1049L, 1051L, 
-    1061L, 1073L, 1082L, 1090L, 1116L, 1126L, 1142L, 1144L, 1158L, 
-    1169L, 1177L, 1188L, 1213L, 1220L, 1262L)), .Names = c("x", 
-"y"), row.names = c("1", "12", "23", "34", "45", "56", "67", 
-"78", "89", "100", "111", "122", "133", "144", "155", "176", 
-"177", "188", "199", "210", "221", "232", "242", "253", "264", 
-"275", "286", "297", "319", "329", "331", "332", "363", "367", 
-"375", "395", "406", "417", "428", "439", "450", "451", "462", 
-"473", "484", "495", "505", "516", "527", "537", "563", "575", 
-"585", "607", "633", "660", "674", "703", "708", "719", "729", 
-"740", "751", "762", "773", "784", "795", "806", "817", "828", 
-"839", "850", "861", "872", "883", "894", "905", "916", "927", 
-"938", "956", "967", "971", "982", "1004", "1016", "1022", "1039", 
-"1049", "1051", "1061", "1073", "1082", "1090", "1116", "1126", 
-"1142", "1144", "1158", "1169", "1177", "1188", "1213", "1220", 
-"1262"), class = "data.frame")
-
-spans<-tune.loess(data=tmp.data[,"x",drop=F],y=tmp.data[,"y"],folds=length(y))
-x<-loess.normalization(x=tmp.data[,"x",drop=F],y=tmp.data[,"y"],span=spans)
-
-plot(tmp.data[,"y"],tmp.data[,"x"],"n")
-points(tmp.data[,"y"],tmp.data[,"x"],col="red")
-points(tmp.data[,"y"],x,col="blue")
-lines(tmp.data[,"y"],loess(tmp.data[,"y"]~x)$fitted,col="blue")
-
-}
+# }

@@ -11,21 +11,21 @@ namel<-function (vec){
 	
 #UI
 output$pca_variables <- renderUI({
-  vars <- varnames()
+	vars <- varnames()
 	# isNum <- "numeric" == getdata_class() | "integer" == getdata_class()
  	# vars <- vars[isNum]
   if(length(vars) == 0) return()
   # selectInput(inputId = "pca_var", label = "Variables:", choices = vars, selected = names(vars), multiple = TRUE)
-  selectInput(inputId = "pca_var", label = "Variables:", choices = vars, multiple = TRUE, selectize=FALSE)
+  selectInput(inputId = "pca_var", label = "Variables:", choices = vars, selected=vars, multiple = TRUE, selectize=FALSE)
 })
 
 output$pca_groups<-renderUI({
-vars <- varnames()
+	vars <- varnames()
 	isNum <- !"numeric" == getdata_class() & !"integer" == getdata_class()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
  
-  selectInput(inputId = "pca_groups", label = "", choices = c("none",vars), selected = "none", multiple = TRUE)
+  selectInput(inputId = "pca_groups", label = "", choices = vars, multiple = TRUE)
 })
 
 output$PCs<-renderUI({
@@ -51,6 +51,8 @@ ui_pca <- function() {
 			h4('Calculate'),
 			tags$details(open="open",tags$summary("Options"),
 				uiOutput("pca_variables"), # variables
+				tags$style(type='text/css', "#pca_var { height: 200px; padding-bottom: 10px;}"),
+				br(),
 				uiOutput("PCs"),
 				checkboxInput("pca_center","Center",TRUE),
 				selectInput("pca_scaling","Scale", list(none = "none", "unit variance" = "uv", pareto = "pareto"),selected="unit variance"),		
@@ -87,12 +89,17 @@ ui_pca <- function() {
 							numericInput("pca_label_font_size", "Size:", value=5, min = 0,step=1),
 							textInput("pca_legend_label", "Legend title", value = "auto")	
 						)	
-				),
-			tags$details(tags$summary("More options"),
-						br(),
-							downloadButton('Download_pca_plot', label = "Download plot")
-						)	
-			)
+				),	
+				tags$details(tags$summary("More options"),
+							br(),
+								downloadButton('Download_pca_plot', label = "Download plot")
+							)	
+			),
+			h4('Save'),
+				tags$details(tags$summary("Objects"),
+					selectInput("pca_result_obj","",choices=c("-----" = ""),selected = "-----",multiple=TRUE),#,values[["opls_objects"]]$return_obj_name),
+					actionButton("save_pca_result_obj", "Save")
+				)	
 		)#,
 		#adding modal alters the markup rendering	
 		# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
@@ -100,6 +107,24 @@ ui_pca <- function() {
 		# helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
 	)
 }
+
+#save PCA results
+observe({
+	
+	#meta data for scores
+	if(is.null(input$datasets)) return()
+			
+	#update GUI
+	if(is.null(values$pca_result_objects)) return()
+	updateSelectInput(session, "pca_result_obj", choices = values$pca_result_objects)
+	
+	# #save
+	if(is.null(input$save_pca_result_obj) || input$save_pca_result_obj == 0) return()
+	isolate({
+		values$datasetlist <- unique(c(values$datasetlist,values$pca_result_objects))
+	})	
+})	
+
 
 #text output
 summary.pca <- function(result) {
@@ -131,28 +156,36 @@ pca <- reactive({
 	
 	
 	# #save outputs #should add button to trigger
-	isolate({
-		name<-paste0(input$datasets,"_PCA_sample_info")
-		#add index, and Y for visualizations
-		#bind with any factors in the data
-		
-		diagnostics<-data.frame(values$pca.results$pca.diagnostics)
-		tmp.obj<-data.frame(index=c(1:nrow(values$pca.results$pca.scores)),scores=values$pca.results$pca.scores,diagnostics)
-		meta<-fixlr(getdata(),.remove=F)
-		tmp.obj<-data.frame(meta,tmp.obj)
-		# rownames(tmp.obj)<-rownames(get(input$datasets))
-		rownames(tmp.obj)<-rownames(getdata())
-		values[[name]]<-tmp.obj
-		values$datasetlist <- unique(c(values$datasetlist,name))
-	})
+	# isolate({
+	pca_result_objects<-list()
+	name<-paste0(input$datasets,"_PCA_sample_info")
+	#add index, and Y for visualizations
+	#bind with any factors in the data
 	
-	isolate({
-		name<-paste0(input$datasets,"_PCA_variable_info")
-		#add index, and Y for visualizations #should use expression set type object and carry around row an col meta in extra items
-		tmp.obj<-data.frame(index=c(1:nrow(values$pca.results$pca.loadings)),loadings=values$pca.results$pca.loadings)
-		values[[name]]<-tmp.obj
-		values$datasetlist <- unique(c(values$datasetlist,name))
-	})
+	diagnostics<-data.frame(values$pca.results$pca.diagnostics)
+	tmp.obj<-data.frame(index=c(1:nrow(values$pca.results$pca.scores)),scores=values$pca.results$pca.scores,diagnostics)
+	meta<-fixlr(getdata(),.remove=F)
+	tmp.obj<-data.frame(meta,tmp.obj)
+	# rownames(tmp.obj)<-rownames(get(input$datasets))
+	rownames(tmp.obj)<-rownames(getdata())
+	# values[[name]]<-tmp.obj
+	values[["pca_objects"]]$pca_sample_info_name<-name
+	values[[name]]<-tmp.obj	
+	pca_result_objects<-c(pca_result_objects,name)
+	# values$datasetlist <- unique(c(values$datasetlist,name))
+	# })
+	
+	# isolate({
+	name<-paste0(input$datasets,"_PCA_variable_info")
+	#add index, and Y for visualizations #should use expression set type object and carry around row an col meta in extra items
+	tmp.obj<-data.frame(index=c(1:nrow(values$pca.results$pca.loadings)),loadings=values$pca.results$pca.loadings)
+	# values[[name]]<-tmp.obj
+	# values$datasetlist <- unique(c(values$datasetlist,name))
+	values[["pca_objects"]]$pca_variable_info_name<-name
+	values[[name]]<-tmp.obj	
+	pca_result_objects<-c(pca_result_objects,name)
+	values$pca_result_objects<-unlist(unique(pca_result_objects))
+	# })	
 	
 	return(pca.results)
 	

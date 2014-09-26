@@ -118,7 +118,7 @@ input[type="number"] {
 }
 
 
-#viz_plot_width, #viz_plot_height, #pmap_scaling, #pmap_fontsz , #variable_size_min, #variable_size_max { 
+#viz_plot_width, #viz_plot_height, #pmap_scaling, #pmap_fontsz , #variable_size_min, #variable_size_max, #summary_plot_width, #summary_plot_height { 
   max-width: 60px; 
 }
 
@@ -129,3 +129,21 @@ input[type="number"] {
 #fac_condFormat { 
   vertical-align: middle; 
 }
+
+div.busy {
+  position:absolute;
+  top: 40%;
+  left: 50%;
+  margin-top: -100px;
+  margin-left: -50px;
+  display:none;
+  background: transparent; /*rgba(230, 230, 230, .08);*/
+  text-align: center;
+  padding-top: 20px;
+  padding-left: 30px;
+  padding-bottom: 40px;
+  padding-right: 30px;
+  border-radius: 5px;
+}
+
+

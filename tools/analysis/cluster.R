@@ -109,9 +109,29 @@ hc_dist_method <-  c("none","euclidean", "maximum", "manhattan", "canberra", "bi
 #plot type
 plot_control_hclustering<-function(){
 	tags$details(
-		radioButtons(inputId = "hclustering_plot_heatmap", label = "Plot type:", choices = c("heatmap","dendrogram"), selected = "heatmap")
+		radioButtons(inputId = "hclustering_plot_heatmap", label = "Plot type:", choices = c("heatmap","dendrogram"), selected = "heatmap"),
 	)		
 } 
+
+#plot dimensions
+clustering_plot_width<-reactive({
+	if(!input$tool=="hclustering") return()
+	if(is.null(input$hclustering_plot_width))  return()
+	values$plot$'plotWidth'<-input$hclustering_plot_width
+})
+
+clustering_plot_height<-reactive({
+	if(!input$tool=="hclustering") return()
+	if(is.null(input$hclustering_plot_height))  return()
+	values$plot$'plotHeight'<-input$hclustering_plot_height
+})
+
+#watcher for plot dimensions
+observe({
+	if(!input$tool=="hclustering") return()
+	clustering_plot_height()
+	clustering_plot_height()
+})
 
 ui_hclustering <- function() {
   list(
@@ -122,8 +142,9 @@ ui_hclustering <- function() {
 			tags$details(open="open", tags$summary("Options"),	
 				radioButtons("dimention","Dimension:", list("rows" = 1,"columns" = 2), selected = "rows"),
 				uiOutput("hc_vars"), # data variables
-			# tags$style(type='text/css', "#hc_vars { height: 200px; padding-bottom: 35px;}"),
+			tags$style(type='text/css', "#hc_vars { height: 200px; padding-bottom: 10px;}"),
 			 # flipping data rows/columns
+			 br(),
 			selectInput("hc_transformation", label = "Transformation:", choices = hc_transformation, selected = hc_transformation[1], multiple = FALSE)
 			)
 		),
@@ -152,6 +173,13 @@ ui_hclustering <- function() {
 				selectInput("high_col","high", color.opts(),selected = "red")
 			),
 		tags$details(tags$summary("More options"),
+			numericInput(inputId ="hclustering_plot_text_size", label = "Text size:", value=14, min = 0, step = 1),
+			div(class="row-fluid", # see css.style for this as well
+					div(class="span6",numericInput("hclustering_plot_width", label = "width", min = 0, step = 50, value = 650)),
+					div(class="span6", numericInput("hclustering_plot_height", label = "height", min = 0, step = 50, value = 650))
+			),	
+			tags$style(type="text/css", "#hclustering_plot_width {width:75px;}"),
+			tags$style(type="text/css", "#hclustering_plot_height {width:75px;}"),
 			br(),
 			downloadButton('Download_cluster_plot', label = "Download plot")
 			)	
@@ -167,6 +195,8 @@ ui_hclustering <- function() {
 # #make heatmap
 plot.hclustering <- function(result){ # not sure why result is necessary
    
+   if(!input$analysistabs == 'Plots') return()
+	
 	if (input$hclustering_plot_heatmap=="heatmap"){
 		result<-values$clustering.results.object # to save plots
 		#plot heatmap 
@@ -179,7 +209,7 @@ plot.hclustering <- function(result){ # not sure why result is necessary
 		  heatmap.color	 	 	= result$heatmap.color,
 		  cluster.method 		= result$cluster.method, 
 		  distance.method 		= result$distance.method,
-		  font.size 		  	= 12,
+		  font.size 		  	= result$hclustering_plot_text_size,
 		  border.color	  		= result$border.color,
 		  show.names 		  	= result$show.names)
 	}
@@ -190,11 +220,11 @@ plot.hclustering <- function(result){ # not sure why result is necessary
 		if (!tmp$distance.method == "none" | !tmp$cluster.method == "none") {
 			clusters<-hclustering_results()
 			k.clust<-as.numeric(input$hc_nrClus)
-			devium.dendrogram(clusters, k = k.clust, boxes = FALSE, col.up = "gray50", col.down = rainbow(k.clust), main="")
+			devium.dendrogram(clusters, k = k.clust, boxes = FALSE, col.up = "gray50", col.down = rainbow(k.clust), main="",text.cex=result$hclustering_plot_text_size)
 			ccolor<-rev(rainbow(input$hc_nrClus))
 			legend("topright", legend=paste("cluster",1:input$hc_nrClus, sep=" "), fill=ccolor, border= ccolor,bty = "n" )
 		} else {
-			plot(x = 1, type = 'n', main="Please set clustering options first.", axes = FALSE, xlab = "", ylab = "")
+			empty.plot("Please calculate clusters before plotting.")
 		}
 	}
 	
@@ -224,24 +254,22 @@ output$Download_cluster_plot<-downloadHandler(
 # # #----------output-----------------------
 summary.hclustering <- function(result) {
 	
+	if(is.null(varnames())) return()
+	
 	cluster.id<-grepl("hclus",varnames()) # ?
-	cluster.data<-getdata2()[,cluster.id,drop=FALSE]
-	# if(is.null(values$col_hc_clusters)) { 
-		# var.clus.info<-NULL
-	# } else {
-		# var.clus.info<-data.frame(do.call("cbind",values$col_hc_clusters))
-		# tmp.data <-getdata2() #remove factors
-		# fct.id<-!sapply(seq(tmp.data), function(i){is.factor(tmp.data[,i])})
-		# var.clus.info[,1]<-colnames(tmp.data)[fct.id]
-		
-	# }
-	# if(is.null(values$hclust_edge_list)) { hc_edge.list <-NULL } else { hc_edge.list<- values$hclust_edge_list }
+	cluster.data<-getdata2()[,cluster.id,drop=FALSE] #cluster.id
+	
+	if(!is.null(values$col_hc_clusters)){#TODO: add reset mechanism elsewhere hack for now!!!!
+		# if(nrow(values$col_hc_clusters)>nrow(getdata())) values$col_hc_clusters<-NULL
+	} 
+
 	list(sample.cluster.info = cluster.data,
 		variable.cluster.info = values$col_hc_clusters) #, edge.list = hc_edge.list
 }
 
 # place all reactive inside here the result is sent to plots or summaries
 hclustering<-reactive({ # clustering output
+	
 	tmp<-list() # collect args to pass to plot
 	#dimension
 	tmp$match.dim<- as.numeric(input$dimention)
@@ -281,10 +309,10 @@ hclustering<-reactive({ # clustering output
 		tmp$distance.method <- input$hc_dist
     }
 	tmp$type<-input$hc_transformation
-	
+	tmp$hclustering_plot_text_size<-input$hclustering_plot_text_size
 	tmp$heatmap.color<-c(input$low_col,input$mid_col,input$high_col)
 	values$clustering.results.object<-tmp
-	tmp
+	return(tmp)
 })
 
 

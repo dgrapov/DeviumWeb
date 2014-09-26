@@ -5,8 +5,12 @@
 ![logo](other/generic_logo.png)
 ![demo](other/devium1.0.gif)
 
+###Information
+Version: 0.3.0
+News: [See the latest features and fixes.]()
+
 ### Download
-[DeviumWeb v0.2.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v0.2.0.zip/download) (08/14/14)
+[DeviumWeb v0.3.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v0.3.0.zip/download) (09/26/14)
 
 - To download the current development version, click the 'Download ZIP' button at the top right of this page. 
 
@@ -14,7 +18,7 @@
 
 - Required: [R](http://cran.rstudio.com/) (v3.1.1)
 - Required: [Shiny](http://www.rstudio.com/shiny/) (v0.10.1)
-- Required: A modern browser (e.g., Chrome, Firefox, or Safari). Internet Explorer is not supported.
+- Required: A modern browser (e.g., Chrome*, Firefox, or Safari). *Recommeded
 
 Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
 

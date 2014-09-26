@@ -27,7 +27,7 @@ ui_Manage <- function() {
         actionButton('saveClipData', 'Copy data')
       ),
       conditionalPanel(condition = "input.saveAs != 'clipboard'",
-        downloadButton('downloadData', 'Save data')
+        downloadButton('downloadData', 'Save')
       )
 	 ) 
     ),
@@ -154,7 +154,6 @@ observe({
     values[['datasetlist']] <- datasets
   })
 })
-
 
 loadUserData <- function(filename, uFile) {
 

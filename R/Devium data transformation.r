@@ -76,30 +76,83 @@ transform.to.normal.output<-function(obj,name="transformed.data", envir=devium)
 		assign(names(obj)[2],data.frame(p.value=diagnostics[,1,drop=FALSE],transformation=as.factor(unlist(diagnostics[,2,drop=FALSE]))),envir=.GlobalEnv)
 		}
 
-#data scaling functions		
-scale.data<-function(data, scale="uv", center=TRUE)
-	{
-		switch(scale,
-		"uv" 			= .local<-function(){check.get.packages("pcaMethods");pcaMethods::prep(data,scale,center)},
-		"pareto" 		= .local<-function(){check.get.packages("pcaMethods");pcaMethods::prep(data,scale,center)},
-		"vector"		= .local<-function(){check.get.packages("pcaMethods");pcaMethods::prep(data,scale,center)},
-		"none"			= .local<-function(){return(data)},
-		"range scale" 	= .local<-function(){tmp<-sapply(1:ncol(data),function(i)
-												{
-													obj<-data[,i]
-													tmp<-range(obj)
-													(obj-tmp[1])/(tmp[2]-tmp[1])
+# #data scaling for columns		
+# scale.data<-function(data, scale="uv", center=TRUE){
+		# switch(scale,
+		# "uv" 			= .local<-function(){pcaMethods::prep(data,scale,center)},
+		# "pareto" 		= .local<-function(){pcaMethods::prep(data,scale,center)},
+		# "vector"		= .local<-function(){pcaMethods::prep(data,scale,center)},
+		# "none"			= .local<-function(){return(data)},
+		# "range_scale" 	= .local<-function(){tmp<-sapply(1:ncol(data),function(i)
+												# {
+													# obj<-data[,i]
+													# tmp<-range(obj)
+													# (obj-tmp[1])/(tmp[2]-tmp[1])
 													
-												})
-												colnames(tmp)<-colnames(data)
-												return(tmp)
-											})
-		.local()						
-	}
+												# })
+												# colnames(tmp)<-colnames(data)
+												# return(tmp)
+											# })
+		# .local()						
+	# }
 
+#scaling for rows or columns
+scale.data<-function(data, type="median", dim=1,positive.only=TRUE){
+	
+	#input needs to be numeric
+	#make.positive adds minimum to all values to get rid of negatives
+	if(type=="sum"){
+		val<-apply(data,dim,sum)
+		res<-sweep(data,dim,val,"/")
+	}
+	
+	if(type=="l2"){
+		val<-apply(data^2,dim,sum)^.5
+		res<-sweep(data,dim,val,"/")
+	}
+	
+	if(type%in%c("mean","median")){
+		val<-apply(data,dim,type)
+		res<-sweep(data,dim,val,"-")
+		if(positive.only) res<-make.positive(res)
+	}
+	
+	if(type=="uv"){
+		val<-apply(data,dim,sd)
+		res<-sweep(data,dim,val,"/")
+	}
+	
+	if(type=="pareto"){
+		val<-apply(data,dim,sd)^.5
+		res<-sweep(data,dim,val,"/")
+	}
+	# could add level and vast scaling http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1534033/table/T1/
+	if(type=="range_scale"){
+		if(dim==2){
+			res<-data.frame(do.call("cbind",lapply(1:ncol(data),function(i)
+			{
+				obj<-data[,i]
+				tmp<-range(obj)
+				(obj-tmp[1])/(tmp[2]-tmp[1])
+			})))
+		} else {
+			res<-data.frame(do.call("rbind",lapply(1:nrow(data),function(i)
+			{
+				obj<-data[i,]
+				tmp<-range(obj)
+				(obj-tmp[1])/(tmp[2]-tmp[1])
+			})))
+
+		}
+		colnames(res)<-colnames(data)
+	}		
+	
+	return(res)
+}
+	
 #scale data within  a range
 #rescaling based on: http://cran.r-project.org/doc/contrib/Lemon-kickstart/rescale.R
- rescale<-function(x,newrange) {
+rescale<-function(x,newrange) {
 	 if(nargs() > 1 && is.numeric(x) && is.numeric(newrange)) {
 	  # if newrange has max first, reverse it
 	  if(newrange[1] > newrange[2]) {
@@ -176,4 +229,42 @@ all.ratios<-function(data){
 	do.call("cbind",vars)	   
 }	
 
-#
+#remove minimum values through addtion
+make.positive<-function(obj){
+	mins<-apply(obj,2,min,na.rm=TRUE)
+	sweep(obj,2,abs(mins),"+")
+}
+
+#tests
+test<-function(){
+#simulate data
+data<-matrix(1:5,5,5)
+(x<-scale.data(data, type="uv", dim=2))
+apply(x,2,sd)
+
+(x<-scale.data(data, type="pareto", dim=2))
+apply(x,2,sd)
+
+
+#make positive
+data<-matrix(rnorm(100,10),5,5)
+make.positive(data)
+
+make.positive<-function(obj){
+	mins<-apply(obj,2,min,na.rm=TRUE)
+	sweep(obj,2,abs(mins),"+")
+}
+
+
+val<-apply(data,1,sum)
+x<-sweep(data,1,val,"/")
+apply(x,1,sum)
+
+x<-scale.data2(data, type="sum", dim=2)
+
+data(mtcars)
+data<-mtcars
+data$am<-factor(data$am)
+(x<-scale.data(data, type="uv", dim=2))
+
+}

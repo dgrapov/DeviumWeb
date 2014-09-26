@@ -6,10 +6,8 @@ libs <- c("shiny", "knitr", "Hmisc", "car", "tools", "gridExtra", "markdown", "R
 #Devium Libs
 libs2 <- c("impute","WGCNA","RJSONIO","pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 
 	"gridExtra", "reshape2", "plyr", "markdown", "R.utils", "psych", "rela", "xts","fdrtool","pls",
-	"qvalue","pcaMethods","shiny") #"arm", 
-#having problems with R_fromJSON" not resolved from current namespace (RJSONIO) only for web launch? 
+	"qvalue","pcaMethods","shiny","hexbin","RColorBrewer") #"arm", 
 
-	
 libs<-unique(c(libs,libs2))	
 		
 # #function to load from bioconductor

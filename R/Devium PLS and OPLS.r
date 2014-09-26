@@ -32,6 +32,14 @@ make.OSC.PLS.model<-function(pls.y,pls.data,comp=2,OSC.comp=1,validation = "LOO"
 		p.ortho<- crossprod(as.matrix(data),t.ortho)/ c(crossprod(t.ortho))
 		Xcorr<- data - tcrossprod(t.ortho,p.ortho)
 		
+		
+		#stats for classifiers, currently for two group comparisons only
+		# for training data only
+		if(OPLSDA==TRUE){
+			pred.val<-as.data.frame(tmp.model$fitted.values)[,comp]
+			OSC.results$OPLSDA.stats[[i]]<-O.PLS.DA.stats(pred=pred.val,truth=unlist(OSC.results$y[[1]])[,1])
+		}
+		
 		#prediction objects
 		if(!is.null(train.test.index)){
 			test.data<-OSC.results$test.data[[i]]
@@ -1111,6 +1119,60 @@ permute.OSC.PLS<-function(data,y,n=10,ncomp,OSC.comp=1,train.test.index=NULL,...
 	return(list(permuted.values=cbind(tmp,cor.with.y), mean = means, standard.deviations = sds, summary = summary))
 }	
 
+#IMPROVED version of permute.OSC.PLS, using a modification of the test/train OSC.PLS.train.test to return full prediction results
+permute.OSC.PLS.train.test<-function(pls.data,pls.y,perm.n=10,train.test.index,comp,OSC.comp,...) 
+	{
+		pls.y<-as.matrix(pls.y)
+		#permute the Y
+		perm.y<-lapply(1:perm.n,function(i)
+			{
+				apply(pls.y[,1,drop=FALSE],2,gtools::permute)
+			})
+			
+		results<-lapply(1:ncol(train.test.index), function(i){
+			pls.y<-as.matrix(perm.y[[i]])
+			pls.train.index<-as.matrix(train.test.index[,i])
+			#order for merging test with train stats in one object
+			new.order<-c(c(1:nrow(pls.data))[pls.train.index=="train"],c(1:nrow(pls.data))[pls.train.index=="test"])
+			back.sort<-order(new.order)
+
+			train.y<-train.real<-pls.y[pls.train.index=="train",]
+			train.data<-pls.data[pls.train.index=="train",]
+			test.real<-pls.y[pls.train.index=="test",]
+			#all arguments gave been preset elsewhere
+			test.pls.results<-make.OSC.PLS.model(pls.y=pls.y,pls.data=pls.data,comp=comp,OSC.comp=OSC.comp, train.test.index=pls.train.index,...)
+			tmp.OSC.comp<-max(test.pls.results$OSC.LVs) # control when limited with Orthogonal dimensions
+			Q2<-data.frame(Q2=test.pls.results$Q2[[tmp.OSC.comp+1]][comp,])
+			
+			#fitted values
+			train.pred<-test.pls.results$fitted.values[[tmp.OSC.comp+1]][,,comp]
+			test.pred<-test.pls.results$predicted.Y[[tmp.OSC.comp+1]]
+			
+			RMSEP<-data.frame(RMSEP=test.pls.results$predicted.RMSEP[[tmp.OSC.comp+1]])
+			Xvar<-data.frame(Xvar=round(sum(test.pls.results$Xvar[[tmp.OSC.comp+1]])*100,1))
+			if(!is.null(test.pls.results$OPLSDA.stats)){oplsda.stats<-data.frame(test.pls.results$OPLSDA.stats[[tmp.OSC.comp+1]])} else {oplsda.stats<-NULL} 
+		
+			#results
+			predicted.y<-rbind(as.matrix(train.pred),as.matrix(test.pred))
+			actual.y<-rbind(as.matrix(train.real),as.matrix(test.real))
+			test.index<-pls.train.index
+			if(is.null(oplsda.stats)){
+					res<-list(data.frame(predicted = predicted.y[back.sort,], actual = actual.y[back.sort,],train.test.id=test.index), data.frame(Xvar,Q2,RMSEP))
+				} else {
+					res<-list(data.frame(predicted = predicted.y[back.sort,], actual = actual.y[back.sort,],train.test.id=test.index), data.frame(Xvar,Q2,RMSEP,oplsda.stats))
+				}
+			return(res)
+		})
+		
+		#need to summarize results
+		id<-c(1:length(results))[c(1:length(results))%%2==0]
+		aggregated<-do.call("rbind",lapply(1:length(results),function(i){data.frame(results[[i]][2])}))
+		
+		aggregated.summary<-matrix(paste(signif(apply(aggregated,2,mean,na.rm=TRUE),4),"+/-",signif(apply(aggregated,2,sd,na.rm=TRUE),3)),nrow=1)
+		colnames(aggregated.summary)<-colnames(aggregated)
+		list(full.results=results, performance=aggregated, summary=aggregated.summary)
+	}	
+
 #permute OSC-PLS model (in progress version for multiple Ys)
 permute.OSC.PLS2<-function(data,y,n=10,ncomp,OSC.comp=1,train.test.index=NULL,...){ # should be made parallel
 	
@@ -1192,7 +1254,7 @@ OSC.validate.model<-function(model, perm, train= NULL, test="t.test",...) {
         
         if(is.null(train)){
                 p.vals<-lapply(1:ncol(mod.vals),function(i){
-                        if(names(mod.vals[i])=="RMSEP") {dir<-">"} else {dir<-"<"} # used for permutation tests
+                        if(names(mod.vals[i])%in%c("RMSEP","ER","FPR")) {dir<-">"} else {dir<-"<"} # used for permutation tests
                         switch(test,
                                 "t.test"        = single.test(mod=mod.vals[i],perm=perm.vals[,i]),
                                 "perm.test" = perm.test(mod=mod.vals[i],perm=perm.vals[,i],dir,type=1),
@@ -1205,7 +1267,7 @@ OSC.validate.model<-function(model, perm, train= NULL, test="t.test",...) {
                 rownames(res)<-c("model","permuted model","p-value")
         } else {
                 p.vals<-lapply(1:ncol(mod.vals),function(i){
-                        if(names(mod.vals[i])=="RMSEP") {dir<-">"} else {dir<-"<"} # used for permutation tests
+                        if(names(mod.vals[i])%in%c("RMSEP","ER","FPR")) {dir<-">"} else {dir<-"<"} # used for permutation tests
                         switch(test,
                                 "t.test"        = group.test(mod=mod.vals[,i],perm=perm.vals[,i]),
                                 "perm.test" = perm.test(mod=mod.vals[i],perm=perm.vals[,i],dir),
@@ -1223,7 +1285,7 @@ OSC.validate.model<-function(model, perm, train= NULL, test="t.test",...) {
 
 #conservative p-value based on permutation tests  http://www.ncbi.nlm.nih.gov/pubmed/21044043 (could go elsewhere)
 perm.test<-function(mod,perm,compare="<",type=1){
-		f<-function(mod,perm,compare){(sum(do.call(compare,list(na.omit(mod),na.omit(perm))))+1)/(mean(length(na.omit(perm)),length(na.omit(mod)))+1)}
+		f<-function(mod,perm,compare){tryCatch((sum(do.call(compare,list(na.omit(mod),na.omit(perm))))+1)/(mean(length(na.omit(perm)),length(na.omit(mod)))+1),error=function(e) {NA})}
 		if(type==1){f(mod,perm,compare)} else {f(mod,perm,compare=compare)-1/(mean(length(na.omit(perm)),length(na.omit(mod)))+1)}
 	}
 
@@ -1668,14 +1730,15 @@ O.PLS.DA.stats<-function(truth,pred){
 	
 	#misclassCounts(binned.pred,truth)  # library(hmeasure)
 	
-	AUC<-tryCatch(mod.AUC(binned.pred,truth),error=function(e){NA}) # protect errors due to !=2 groups
+	# AUC<-tryCatch(mod.AUC(pred=binned.pred,truth=truth),error=function(e){NA}) # protect errors due to !=2 groups
+	AUC<-mod.AUC(pred=binned.pred,truth=truth) # no clue why get NA
 	# get other metrics
 	# library(hmeasure) # using modified fxn which accepts inputs other than 1 and 0
-	results<-tryCatch(misclassCounts2(binned.pred,truth)$metrics ,error=function(e){"error"}) # protect errors due to >2 groups or use caret::confusionMatrix
+	results<-tryCatch(misclassCounts2(pred=binned.pred,truth=truth)$metrics ,error=function(e){NULL}) # protect errors due to >2 groups or use caret::confusionMatrix
 	 #happens when there are perfect predictions
 	# library(caret)
 	# results<-tryCatch(confusionMatrix(binned.pred,as.numeric(truth)),error=function(e){"error"}) # protect errors due to >2 groups
-	if(results=="error"){results<-list();results$byClass[1:2]<-NA}
+	if(is.null(results)){results<-list();results$byClass[1:2]<-NA}
 	# res<-data.frame(AUC=AUC,sensitivity=results$byClass[1], specificity=results$byClass[2])
 	res<-data.frame(AUC=AUC,results)
 	
@@ -1912,10 +1975,10 @@ data(mtcars)
 	opls.results<-make.OSC.PLS.model(pls.y,pls.data,
 							comp=2,
 							OSC.comp=1, 
-							validation = "none", 
+							validation = "LOO", 
 							cv.scale = TRUE,
 							train.test.index=NULL,
-							progress=FALSE,
+							progress=TRUE,
 							OPLSDA=TRUE)
 				
 	final.opls.results<-get.OSC.model(obj=opls.results,OSC.comp=1)		
@@ -1953,6 +2016,11 @@ data(mtcars)
 	plot.multi.OPLS.feature.select(res) # view results
 	best.OPLS.features(res) # extract best model
 	#extract best model
+	
+	
+	#
+	O.PLS.DA.stats(pred=round(runif(10),0),truth=round(runif(10),0))
+
 }
 
 

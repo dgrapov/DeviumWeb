@@ -20,7 +20,7 @@ output$dataviewer <-renderDataTable({
   if(is.null(input$datasets) || is.null(input$columns)) return()
 
   # dat <- getdata()
-  dat <- date2character()
+  dat <- cbind(rownames(getdata()),date2character())
 
   if(!all(input$columns %in% colnames(dat))) return()
 
@@ -38,7 +38,7 @@ output$dataviewer <-renderDataTable({
     }
   }
 
-  dat <- data.frame(dat[, input$columns, drop = FALSE])
+  dat <- data.frame(rownames=dat[,1],dat[, input$columns, drop = FALSE])
   dat
 
   # html <- print(xtable::xtable(dat), type='html', print.results = FALSE)

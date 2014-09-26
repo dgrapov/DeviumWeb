@@ -163,7 +163,7 @@ devium.dendrogram<-function(
   members,
   color.text = FALSE,
   text.length = 10,
-  text.cex=.5,
+  text.cex=1,
   ...
 ){
 
