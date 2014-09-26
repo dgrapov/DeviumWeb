@@ -7,6 +7,7 @@
 
 ###Information
 Version: 0.3.0
+
 News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
 ### Download
