@@ -7,7 +7,7 @@
 
 ###Information
 Version: 0.3.0
-News: [See the latest features and fixes.]()
+News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
 ### Download
 [DeviumWeb v0.3.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v0.3.0.zip/download) (09/26/14)
