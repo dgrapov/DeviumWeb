@@ -6,12 +6,9 @@
 ![demo](other/devium1.0.gif)
 
 ###Information
-<<<<<<< HEAD
-Version: 0.3.1 (10/09/14)
-=======
-Version: 0.3.0
 
->>>>>>> d09f0a686f45b1260606d51551d7a5edf5a2182a
+Version: 0.3.1 (10/09/14)
+
 News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
 ### Download
