@@ -6,7 +6,12 @@
 ![demo](other/devium1.0.gif)
 
 ###Information
+<<<<<<< HEAD
 Version: 0.3.1 (10/09/14)
+=======
+Version: 0.3.0
+
+>>>>>>> d09f0a686f45b1260606d51551d7a5edf5a2182a
 News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
 ### Download
@@ -57,6 +62,8 @@ Unzip the file and then start Devium by running the following code in the R cons
 - convert to R package to enable easier loading
 - add help files
 - add network modules
+- missing values handling
+- multi-Y modeling and classification
 
 
 ### License
