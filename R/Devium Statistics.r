@@ -28,7 +28,7 @@ calc.rsd<-function(data,factor,sig.figs=2){
 calc.FC<-function(data,factor,denom=levels(factor)[1],sig.figs=1,log=FALSE){
 	#rel is the order of the level which will be in the denominator
 	#convert factors to numeric
-	data<-data.frame(do.call("cbind",lapply(data,fixlf)))
+	data<-data.frame(do.call("cbind",lapply(data.frame(data),fixln)))
 	d.list<-split(as.data.frame(data),as.factor(factor))
 	res<-do.call("cbind",lapply(1:length(d.list),function(i){
 		obj<-d.list[[i]]
@@ -495,55 +495,6 @@ formula.lme<-function(data,formula,FDR="BH", progress=TRUE){
 		dimnames(out)<-list(colnames(data),names)
 		return(out)
 } 
- 
-#calculate AUC for multiple treatments
-multi.group.AUC<-function(data,subject.id,sample.type, time){
-	library(pracma)
-	#too lazy to rename objects from older fxn
-	subject.id<-as.factor(subject.id)
-	fact<-as.factor(sample.type)	#sample type factor
-	tme<-as.factor(time)	#time	
-	
-	#split objects
-	tmp.data<-split(data,fact)
-	tmp.time<-split(tme,fact)
-	tmp.subs<-split(as.character(subject.id),fact)
-	
-	group.AUC<-lapply(1:nlevels(fact),function(i){
-		ddata<-tmp.data[[i]]
-		ttime<-tmp.time[[i]]
-		subs<-tmp.subs[[i]]
-		
-		#calculate AUC
-		AUC<-sapply(1:length(ddata),function(i)
-		{
-			
-			obj<-split(as.data.frame(ddata[[i]]),subs)
-			#subtract baseline for correct negative AUC
-			base.obj<-lapply(1:length(obj),function(j)
-				{
-					tmp<-as.numeric(as.matrix(unlist(obj[[j]])))
-					tmp-tmp[1]
-				})
-			tmp<-split(as.data.frame(ttime),subs)
-			#x11()
-			#plot(as.numeric(as.matrix(do.call("cbind",tmp))),as.numeric(as.matrix(do.call("cbind",base.obj))))
-			out<-as.data.frame(sapply(1:length(obj),function(j)
-			{
-				x<-as.numeric(as.matrix(unlist(tmp[[j]])))
-				o<-order(x) # need to be in order else AUC will be wrong!
-				y<-as.numeric(as.matrix(unlist(base.obj[[j]])))
-				trapz(x[o],y[o])
-			}))
-		colnames(out)<-colnames(data[i])
-		out
-		})
-		tmp<-do.call("cbind",AUC)
-		rownames(tmp)<-paste(levels(fact)[i],names(split(as.data.frame(ttime),subs)),sep="_")
-		tmp
-	})	
-	do.call("rbind",group.AUC)
-}
 
 #trying to generalize baseline adjustment
 two.factor.adj<-function(data,factor1,factor2,adj.factor,level=0,fxn="-"){

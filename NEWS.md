@@ -1,4 +1,7 @@
 ### Features and Fixes
+#### version 0.3.1 (10/09/14)
+    * fixed fold change calculation bug
+    
 #### version 0.3.0 (09/24/14)
     * added normalization module
     * added pathway enrichment analysis module under Biochemical

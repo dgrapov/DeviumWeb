@@ -6,11 +6,11 @@
 ![demo](other/devium1.0.gif)
 
 ###Information
-Version: 0.3.0
-News: [See the latest features and fixes.]()
+Version: 0.3.1 (10/09/14)
+News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
 ### Download
-[DeviumWeb v0.3.0](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v0.3.0.zip/download) (09/26/14)
+[DeviumWeb v0.3.1](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v0.3.1.zip/download) (10/09/14)
 
 - To download the current development version, click the 'Download ZIP' button at the top right of this page. 
 
