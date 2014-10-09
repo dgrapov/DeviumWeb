@@ -58,6 +58,8 @@ Unzip the file and then start Devium by running the following code in the R cons
 - convert to R package to enable easier loading
 - add help files
 - add network modules
+- missing values handling
+- multi-Y modeling and classification
 
 
 ### License
