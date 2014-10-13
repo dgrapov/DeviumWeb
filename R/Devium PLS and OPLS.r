@@ -1705,10 +1705,10 @@ optimize.OPLS.feature.select<-function(model,feature.subset,permute=TRUE,train.t
 #get classification performance statistics
 O.PLS.DA.stats<-function(truth,pred){
 	#
-	library(ROCR)
+	# library(ROCR)
 	# library(caret) #need e1071
-	library(hmeasure)
-	
+	# library(hmeasure)
+	check.get.packages("ROCR")
 	
 	y.range<-range(as.numeric(truth))
 	mid<-mean(y.range)
