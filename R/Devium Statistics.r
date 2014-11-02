@@ -143,7 +143,7 @@ aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=
 		formula<-paste0(formula,'+ Error(',repeated,')')
 	  }	
 	  
-	  tmp.data<-cbind(factor,data) # bind with data for easy scoping
+	  tmp.data<-cbind(meta.data,data) # bind with data for easy scoping
 	  results<-list(p.value=vector("list",ncol(data)),post.hoc=vector("list",ncol(data)))
 	  for(i in 1:ncol(data)){
 			model<-tryCatch(aov(as.formula(paste("data[,",i,"]~",formula,sep="")),data=tmp.data), error=function(e){NULL})
@@ -191,6 +191,7 @@ aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=
 			return(list(p.values=do.call("rbind",results$p.value),post.hoc=do.call("rbind",results$post.hoc)))
 			
 }
+
 #get summary statistics should separate anova from summary
 stats.summary <- function(data,comp.obj,formula,sigfigs=3,log=FALSE,rel=1,do.stats=TRUE,...){
 		#summarise and make ANOVA from data based on formula 
@@ -609,6 +610,19 @@ multi.pairwise.mann.whitney<-function(data,factor,progress=TRUE,FDR="BH",qvalue=
 }
 #Tests 
 test<-function(){
+
+#ANOVA w/ mtcars
+data(mtcars)
+data<-mtcars[,1:5]
+factor<-data.frame(am=as.factor(mtcars$am),vs=as.factor(mtcars$vs))
+formula<-paste(colnames(factor),collapse="*")
+repeated<-NULL
+post.hoc<-FALSE
+
+(x<-aov.formula.list(data,formula,meta.data=factor[,1:2],post.hoc,repeated,p.adjust="BH"))
+
+
+
 data<-data.frame(read.csv('C:/Users/D/Desktop/Suspension Metabolomics Data_Biswa v2.csv',header=TRUE))
 factor<-with(data, data.frame(Treatment,Time_min2,IDs))
 
@@ -639,7 +653,7 @@ aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=
 		formula<-paste0(formula,'+ Error(',repeated,')')
 	  }	
 	  
-	  tmp.data<-cbind(factor,data) # bind with data for easy scoping
+	  tmp.data<-cbind(meta.data,data) # bind with data for easy scoping
 	  results<-list(p.value=vector("list",ncol(data)),post.hoc=vector("list",ncol(data)))
 	  for(i in 1:ncol(data)){
 			model<-tryCatch(aov(as.formula(paste("data[,",i,"]~",formula,sep="")),data=tmp.data), error=function(e){NULL})
