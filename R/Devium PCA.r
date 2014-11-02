@@ -57,6 +57,44 @@ devium.pca.calculate<-function(pca.inputs,args.list=TRUE,return="list", plot=TRU
 		if(return=="model"){return(pca.results)}
 	}
 	
+#standard input 	
+devium.calculate.pca<-function(data,ncomp=2,pca.cv="none",algorithm="svd",center=TRUE,scale="uv",return="list",seed=123)
+	{
+
+		data.obj<-afixln(data) # converts factors or characters to numeric
+		
+		#adjust PCS if > than data
+		PCs<-ncomp
+		if(PCs> min(dim(data.obj))){PCs<-min(dim(data.obj))} # this should be done internally in the PCa fxn
+		pca.results<-pcaMethods::pca(as.matrix(data.obj), method=algorithm, 
+			nPcs=PCs, center=center,scale=scale, cv = pca.cv, seed=seed)
+		
+		#results
+		scores<-as.data.frame(pca.results@scores)
+		loadings<-as.data.frame(pca.results@loadings)
+		eigenvalues<-data.frame(eigenvalues=pca.results@R2)
+		
+		
+		if(pca.cv=="q2"){
+				# account for unequal r2 and q2 lengths 
+				q2<-tryCatch( pcaMethods:::Q2(pca.results), error=function(e) {0} )#some versions of pcaMEthods don't have this?
+				q2<-c(q2,rep(q2[length(q2)],nrow(eigenvalues)-length(q2)))
+				eigenvalues<-data.frame(eigenvalues,q2=q2)
+			}
+
+		#add leverage and dmodX
+		#bind between scores and loadings
+		lev<-tryCatch(as.matrix( pcaMethods:::leverage(pca.results)),error=function(e){"can not calculate"})
+		dmodx<-tryCatch(as.matrix( pcaMethods:::DModX(pca.results)),error=function(e){"can not calculate"})
+		diagnostics<-tryCatch(data.frame(leverage=lev,DmodX=dmodx),error=function(e){data.frame(Error="not applicable")})
+		
+		#get the name of the data
+		if(return=="list"){
+				return(list(pca.scores = scores, pca.loadings =  loadings,pca.eigenvalues = eigenvalues, pca.diagnostics = diagnostics))} 
+		
+		if(return=="model"){return(pca.results)}
+	}
+	
 # generate a scree plot base
 make.scree.plot<-function(eigenvalues)
 	{

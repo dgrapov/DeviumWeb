@@ -380,7 +380,7 @@ anova <- reactive({
 	factor<-getdata()[,input$anova_groups,drop=FALSE]
 	if(input$anova_interaction==TRUE){formula<-paste(colnames(factor),collapse="*")} else {formula<-paste(colnames(factor),collapse="+")}
 	if(input$anova_take_log) test.data<-log(data+1) else test.data<-data
-	repeated<-if(input$anova_groups_repeated=="none")NULL else repeated
+	repeated<-if(input$anova_groups_repeated=="none" | is.null(input$anova_groups_repeated)) NULL else input$anova_groups_repeated
 	
 	#carry out tests
 	test.res<-aov.formula.list(data=test.data,formula,meta.data=factor,post.hoc=input$anova_post_hoc,repeated=repeated,p.adjust=input$anova_FDR)
@@ -418,9 +418,9 @@ anova <- reactive({
 observe({ 
 	if(is.null(input$save_anova_results) || input$save_anova_results == 0) return()
 	isolate({
-		#should bind with the rest of the data set to
+		
 		name<-paste0(input$datasets,"_ANOVA")
-		values[[name]]<-values$anova_results
+		values[[name]]<-data.frame(do.call("cbind",values$anova_results))
 		values$datasetlist <- unique(c(values$datasetlist,name))
 	})
 })

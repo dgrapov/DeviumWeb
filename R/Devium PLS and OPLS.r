@@ -713,6 +713,7 @@ feature.cut2<-function(obj,type="quantile",thresh=.9,separate=FALSE){
 	#return row
 	return(unlist(filter))
 }
+
 #function to bootstrap many models
 multi.boot.model<-function(algorithm="pcr",data=data,y,
 							feature.subset=NULL,ncomp=4,return="pred.error",R=10,
@@ -852,7 +853,7 @@ make.S.plot<-function(pls.data,pls.scores,pls.loadings, cut.off=0.05, FDR=TRUE,p
 	#... 		= can specify correlation type = c("pearson","spearman","biweight")
 	
 	# calculate p(corr) or correlation between scores and the original variable
-	cor.mat<-devium.calculate.correlations(cbind(pls.scores,pls.data),...) #
+	cor.mat<-devium.calculate.correlations(cbind(pls.scores,pls.data),results="matrix",...) #
 	corrs<-cor.mat$cor[-1,1]
 	p.vals<-cor.mat$p.value[-1,1]
 	
@@ -1227,6 +1228,7 @@ OSC.validate.model<-function(model, perm, train= NULL, test="t.test",...) {
         
         #match model and perm objects
         perm.vals<-perm$permuted.values
+		# perm.vals<-perm$performance
         comp<-length(model$Q2)
         if(is.null(train)){
                 if(any(colnames(perm.vals)=="AUC")){
@@ -1668,33 +1670,33 @@ optimize.OPLS.feature.select<-function(model,feature.subset,permute=TRUE,train.t
 
 	#selected model stats
 	data<-model$data[[1]][,feature.subset,drop=F]
-	model1<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats")
+	model1<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats",...)
 	if(permute==TRUE){
 		#permutation
-			sel.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index) #...
+			sel.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index,...) #...
 		} else {
 			sel.permuted.stats<-NULL
 		}
 
 	#training/testing to get robust model stats
-	sel.OPLS.train.stats <- OSC.PLS.train.test(pls.data = data, pls.y = model$y[[1]], train.test.index, comp = model$total.LVs[1], OSC.comp = max(model$OSC.LVs), cv.scale = model$model.description$cv.scale, progress = progress) # ...
-	sel.OPLS.model<-OSC.validate.model(model = model1, perm = sel.permuted.stats, train = sel.OPLS.train.stats)
+	sel.OPLS.train.stats <- OSC.PLS.train.test(pls.data = data, pls.y = model$y[[1]], train.test.index, comp = model$total.LVs[1], OSC.comp = max(model$OSC.LVs), cv.scale = model$model.description$cv.scale, progress = progress,...) # ...
+	sel.OPLS.model<-OSC.validate.model(model = model1, perm = sel.permuted.stats, train = sel.OPLS.train.stats,test,...)
 
 	#excluded model stats
 	data<-model$data[[1]][,!feature.subset]
-	model2<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats")
+	model2<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats",...)
 	if(permute==TRUE){
 		#permutation
-			ex.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index) #...
+			ex.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index,...) #...
 		} else {
 			ex.permuted.stats<-NULL
 		}
 
 	#training/testing to get robust model stats
-	ex.OPLS.train.stats <- OSC.PLS.train.test(pls.data = data, pls.y = model$y[[1]], train.test.index, comp = model$total.LVs[1], OSC.comp = max(model$OSC.LVs), cv.scale = model$model.description$cv.scale, progress = progress) # ...
-	ex.OPLS.model<-OSC.validate.model(model = model2, perm = ex.permuted.stats, train = ex.OPLS.train.stats)
+	ex.OPLS.train.stats <- OSC.PLS.train.test(pls.data = data, pls.y = model$y[[1]], train.test.index, comp = model$total.LVs[1], OSC.comp = max(model$OSC.LVs), cv.scale = model$model.description$cv.scale, progress = progress,...) # ...
+	ex.OPLS.model<-OSC.validate.model(model = model2, perm = ex.permuted.stats, train = ex.OPLS.train.stats,...)
 
-	full.sel.model.comparison<-OSC.PLS.model.compare(model1=sel.OPLS.train.stats, model2=ex.OPLS.train.stats)
+	full.sel.model.comparison<-OSC.PLS.model.compare(model1=sel.OPLS.train.stats, model2=ex.OPLS.train.stats,...)
 	#create final table
 	out<-data.frame(cbind(model=c(rep("selected",3),rep("excluded",3),"comparison"),rbind(as.matrix(sel.OPLS.model),as.matrix(ex.OPLS.model),as.matrix(full.sel.model.comparison)[3,,drop=F])))
 
@@ -1704,11 +1706,13 @@ optimize.OPLS.feature.select<-function(model,feature.subset,permute=TRUE,train.t
 
 #get classification performance statistics
 O.PLS.DA.stats<-function(truth,pred){
+	
 	#
-	# library(ROCR)
-	# library(caret) #need e1071
-	# library(hmeasure)
 	check.get.packages("ROCR")
+	# library(ROCR)
+	# # library(caret) #need e1071
+	# library(hmeasure)
+	
 	
 	y.range<-range(as.numeric(truth))
 	mid<-mean(y.range)
@@ -1730,8 +1734,8 @@ O.PLS.DA.stats<-function(truth,pred){
 	
 	#misclassCounts(binned.pred,truth)  # library(hmeasure)
 	
-	# AUC<-tryCatch(mod.AUC(pred=binned.pred,truth=truth),error=function(e){NA}) # protect errors due to !=2 groups
-	AUC<-mod.AUC(pred=binned.pred,truth=truth) # no clue why get NA
+	AUC<-tryCatch(mod.AUC(pred=binned.pred,truth=truth),error=function(e){NA}) # protect errors due to !=2 groups
+	# AUC<-mod.AUC(pred=binned.pred,truth=truth) # get NA when groups !=2
 	# get other metrics
 	# library(hmeasure) # using modified fxn which accepts inputs other than 1 and 0
 	results<-tryCatch(misclassCounts2(pred=binned.pred,truth=truth)$metrics ,error=function(e){NULL}) # protect errors due to >2 groups or use caret::confusionMatrix
