@@ -1,4 +1,7 @@
 ### Features and Fixes
+#### version 0.3.2 (11/01/14)
+    * fixed repeated measures ANOVA
+    
 #### version 0.3.1 (10/09/14)
     * fixed fold change calculation bug
     

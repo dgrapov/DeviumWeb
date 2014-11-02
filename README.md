@@ -7,7 +7,7 @@
 
 ###Information
 
-Version: 0.3.1 (10/09/14)
+Version: 0.3.2 (11/01/14)
 
 News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
