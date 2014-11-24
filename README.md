@@ -54,6 +54,11 @@ Unzip the file and then start Devium by running the following code in the R cons
  	#Development version
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
+### Citation
+If you find DeviumWeb useful you can site this work:
+
+Dmitry Grapov. (2014) DeviumWeb: Dynamic Multivariate Data Analysis and Visualization Platform. (v 0.3.2), https://github.com/dgrapov/DeviumWeb
+
 ### TODO
 
 - convert to R package to enable easier loading
@@ -61,7 +66,6 @@ Unzip the file and then start Devium by running the following code in the R cons
 - add network modules
 - missing values handling
 - multi-Y modeling and classification
-
 
 ### License
 
