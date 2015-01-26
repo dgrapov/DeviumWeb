@@ -1,3 +1,7 @@
+# 
+
+
+
 [DeviumWeb](http://spark.rstudio.com/dgrapov/DeviumWeb/#)
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
@@ -7,24 +11,24 @@
 
 ###Information
 
-Version: 0.3.2 (11/01/14)
+Version: 0.4 (1/25/2015)
 
 News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/blob/master/NEWS.md)
 
 ### Download
+* To download the current development version, click the 'Download ZIP' button at the top right of this page. 
+* Older versions 
 [DeviumWeb v0.3.1](https://sourceforge.net/projects/devium/files/DeviumWeb/DeviumWeb%20v0.3.1.zip/download) (10/09/14)
-
-- To download the current development version, click the 'Download ZIP' button at the top right of this page. 
 
 ### Installation
 
 - Required: [R](http://cran.rstudio.com/) (v3.1.1)
-- Required: [Shiny](http://www.rstudio.com/shiny/) (v0.10.1)
-- Required: A modern browser (e.g., Chrome*, Firefox, or Safari). *Recommeded
+- Required: [Shiny](http://www.rstudio.com/shiny/) (v0.10.2.2)
+- Required: A modern browser (e.g., Chrome (recommended), Firefox, or Safari).
 
 Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
 
-	
+  
 	#-------------
  	#Load Directly from GitHub
  	#-------------
@@ -34,12 +38,7 @@ Unzip the file and then start Devium by running the following code in the R cons
 	#-------------
 	#Windows
 	#-------------
-	library(shiny)
-	
-	#Stable version
-	shiny::runApp('~/../Desktop/DeviumWeb v0.2.0/DeviumWeb)
-	
-	# Development version
+  
 	library(shiny)
 	shiny::runApp('~/../Desktop/DeviumWeb-master/DeviumWeb-master')
 
@@ -47,11 +46,7 @@ Unzip the file and then start Devium by running the following code in the R cons
  	#Mac
  	#-------------
  	library(shiny)
- 	
- 	#Stable version
-	shiny::runApp('~/Desktop/DeviumWeb v0.2.0/DeviumWeb)
-	
- 	#Development version
+ 
 	shiny::runApp('~/Desktop/DeviumWeb-master/DeviumWeb-master')
 
 ### TODO
@@ -59,9 +54,6 @@ Unzip the file and then start Devium by running the following code in the R cons
 - convert to R package to enable easier loading
 - add help files
 - add network modules
-- missing values handling
-- multi-Y modeling and classification
-
 
 ### License
 

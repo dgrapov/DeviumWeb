@@ -389,7 +389,7 @@ anova <- reactive({
 		}	
 	
 	#carry out tests
-	test.res<-aov.formula.list(data=test.data,formula,meta.data=factor,post.hoc=input$anova_post_hoc,repeated=repeated,p.adjust=input$anova_FDR)
+	test.res<-aov.formula.list(data=test.data,formula,meta.data=factor,post.hoc=input$anova_post_hoc,repeated=repeated,FDR=input$anova_FDR)
 	
 	# p.vals<-anova.formula.list(test.data,formula,meta.data=factor)
 	p.vals<-test.res$p.values

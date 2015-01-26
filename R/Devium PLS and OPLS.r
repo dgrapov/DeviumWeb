@@ -1121,8 +1121,7 @@ permute.OSC.PLS<-function(data,y,n=10,ncomp,OSC.comp=1,train.test.index=NULL,...
 }	
 
 #IMPROVED version of permute.OSC.PLS, using a modification of the test/train OSC.PLS.train.test to return full prediction results
-permute.OSC.PLS.train.test<-function(pls.data,pls.y,perm.n=10,train.test.index,comp,OSC.comp,...) 
-	{
+permute.OSC.PLS.train.test<-function(pls.data,pls.y,perm.n=10,train.test.index,comp,OSC.comp,...) {
 		pls.y<-as.matrix(pls.y)
 		#permute the Y
 		perm.y<-lapply(1:perm.n,function(i)
@@ -1228,7 +1227,8 @@ OSC.validate.model<-function(model, perm, train= NULL, test="t.test",...) {
         
         #match model and perm objects
         perm.vals<-perm$permuted.values
-		# perm.vals<-perm$performance
+		if(is.null(perm.vals)) perm.vals<-perm$performance # ugly OOP, switching between two versions to get perm
+		
         comp<-length(model$Q2)
         if(is.null(train)){
                 if(any(colnames(perm.vals)=="AUC")){
@@ -1296,7 +1296,7 @@ OSC.PLS.model.compare<-function(model1, model2,test="t.test",...){
 		#models must be object generated with OSC.PLS.train.test
 		
 		p.vals<-do.call("cbind",lapply(1:ncol(model1$performance), function(i) {	
-			if(colnames(model1$performance)[i]=="RMSEP") {dir<-">"} else {dir<-"<"}
+			if(colnames(model1$performance)[i]%in%c("RMSEP","ER","FPR")) {dir<-">"} else {dir<-"<"}
 			switch(test,
 			
 				"t.test" 	= tryCatch(t.test(model1$performance[,i],model2$performance[,i])$p.value, error=function(e) {1}), #force error = insiginificant 
@@ -1312,8 +1312,7 @@ OSC.PLS.model.compare<-function(model1, model2,test="t.test",...){
 }
 
 #conduct train/test validations on PLS model
-PLS.train.test<-function(pls.data,pls.y,pls.train.index,comp,...) 
-	{
+PLS.train.test<-function(pls.data,pls.y,pls.train.index,comp,...) {
 		#only test first Y
 		
 		pls.y<-as.matrix(pls.y)
@@ -1348,8 +1347,7 @@ PLS.train.test<-function(pls.data,pls.y,pls.train.index,comp,...)
 	}
 
 #conduct train/test validations on O-PLS model	
-OSC.PLS.train.test<-function(pls.data,pls.y,train.test.index,comp,OSC.comp,...) 
-	{
+OSC.PLS.train.test<-function(pls.data,pls.y,train.test.index,comp,OSC.comp,...) {
 		pls.y<-as.matrix(pls.y)
 		results<-lapply(1:ncol(train.test.index), function(i){
 			pls.train.index<-as.matrix(train.test.index[,i])
@@ -1445,8 +1443,7 @@ test.train.split<-function(nsamples, n=1, strata=NULL, prop.train=2/3, split.typ
 }	
 
 #function for carrying out test/trainning split based on duplex or kennard-stone method 
-ken.sto2<-function(inp, per = "TRUE", per.n = 0.3, num = 7, va = "TRUE")
- {
+ken.sto2<-function(inp, per = "TRUE", per.n = 0.3, num = 7, va = "TRUE"){
 	#based on  ken.sto in package "soil.spec"
 	#changes: altered number of PCs selection
 	#took out saving, plotting
@@ -1618,8 +1615,7 @@ ken.sto2<-function(inp, per = "TRUE", per.n = 0.3, num = 7, va = "TRUE")
     }
 
 #wrapper to iterate ken.sto2
-duplex.select<-function(data,ken.sto2.obj,percent.in.test)
-	{
+duplex.select<-function(data,ken.sto2.obj,percent.in.test){
 	#determine how many more are needed
 	start.have<-ken.sto2.obj$`Chosen validation sample names`
 	need<-percent.in.test*nrow(data)-length(start.have)
@@ -1665,15 +1661,18 @@ duplex.select<-function(data,ken.sto2.obj,percent.in.test)
 }
 
 #function to calculate included/excluded feature model stats
-optimize.OPLS.feature.select<-function(model,feature.subset,permute=TRUE,train.test.index,progress=TRUE,...){
+optimize.OPLS.feature.select<-function(model,feature.subset,permute=TRUE,train.test.index,progress=TRUE,test="perm.test",...){
 	#need to know OPLS model args (*later store in model and use this a reference)
-
-	#selected model stats
+	#not sure why this is missing
+	ntests<-ncol(train.test.index)
+	#selected model stats (TODO: avoid recalculating the model!)
 	data<-model$data[[1]][,feature.subset,drop=F]
-	model1<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats",...)
+	model1<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats",progress = progress,...)
+	
 	if(permute==TRUE){
 		#permutation
-			sel.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index,...) #...
+			sel.permuted.stats <-permute.OSC.PLS.train.test(data,pls.y = model$y[[1]],perm.n = ntests,train.test.index = train.test.index,comp =  model$total.LVs[1],OSC.comp = max(model$OSC.LVs),progress = progress,...) 
+			# sel.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index,...) #...
 		} else {
 			sel.permuted.stats<-NULL
 		}
@@ -1684,19 +1683,20 @@ optimize.OPLS.feature.select<-function(model,feature.subset,permute=TRUE,train.t
 
 	#excluded model stats
 	data<-model$data[[1]][,!feature.subset]
-	model2<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats",...)
+	model2<-make.OSC.PLS.model(pls.y=model$y[[1]],pls.data=data,comp=model$total.LVs[1],OSC.comp=max(model$OSC.LVs), validation = model$model.description$validation,method=model$model.description$method, cv.scale=model$model.description$cv.scale,return.obj="stats",progress = progress,...)
 	if(permute==TRUE){
 		#permutation
-			ex.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index,...) #...
+			ex.permuted.stats <-permute.OSC.PLS.train.test(data,pls.y = model$y[[1]],perm.n = ntests,train.test.index = train.test.index,comp =  model$total.LVs[1],OSC.comp = max(model$OSC.LVs),progress = progress,...)
+			# ex.permuted.stats <- permute.OSC.PLS(data = data, y = model$y[[1]], n = ntests, ncomp = model$total.LVs[1], osc.comp=max(model$OSC.LVs), progress = progress, train.test.index = train.test.index,...) #...
 		} else {
 			ex.permuted.stats<-NULL
 		}
 
 	#training/testing to get robust model stats
 	ex.OPLS.train.stats <- OSC.PLS.train.test(pls.data = data, pls.y = model$y[[1]], train.test.index, comp = model$total.LVs[1], OSC.comp = max(model$OSC.LVs), cv.scale = model$model.description$cv.scale, progress = progress,...) # ...
-	ex.OPLS.model<-OSC.validate.model(model = model2, perm = ex.permuted.stats, train = ex.OPLS.train.stats,...)
+	ex.OPLS.model<-OSC.validate.model(model = model2, perm = ex.permuted.stats, train = ex.OPLS.train.stats,test,...)
 
-	full.sel.model.comparison<-OSC.PLS.model.compare(model1=sel.OPLS.train.stats, model2=ex.OPLS.train.stats,...)
+	full.sel.model.comparison<-OSC.PLS.model.compare(model1=sel.OPLS.train.stats, model2=ex.OPLS.train.stats,test,...)
 	#create final table
 	out<-data.frame(cbind(model=c(rep("selected",3),rep("excluded",3),"comparison"),rbind(as.matrix(sel.OPLS.model),as.matrix(ex.OPLS.model),as.matrix(full.sel.model.comparison)[3,,drop=F])))
 
@@ -1788,11 +1788,11 @@ misclassCounts2<-function (pred,truth){
 }
 
 #wrapper to carry out multiple feature selection and model validation runs
-multi.OPLS.feature.select<-function(model,filter,plot=TRUE,ocomp=max(model$OSC.LVs),extra=NULL,train.test.index=NULL,progress=TRUE,...){
+multi.OPLS.feature.select<-function(model,filter,ocomp=max(model$OSC.LVs),extra=NULL,train.test.index=NULL,progress=TRUE,...){
+	
 	
 	library(plyr)
-	library(ggplot2)
-	library(gridExtra)
+	
 	.model<-get.OSC.model(obj=model,OSC.comp=ocomp)	
 
 	optimal.feature.selection<-lapply(1:length(filter),function(i){
@@ -1801,60 +1801,88 @@ multi.OPLS.feature.select<-function(model,filter,plot=TRUE,ocomp=max(model$OSC.L
 		opts<-PLS.feature.select(model$data[[1]],pls.scores=.model$scores[,][,1,drop=F],pls.loadings=.model$loadings[,][,1,drop=F],pls.weight=.model$loadings[,][,1,drop=F],plot=FALSE,p.value=1,FDR=FALSE,cut.type="number",top=top,separate=FALSE)
 		optim<-optimize.OPLS.feature.select(model=model,feature.subset=opts$combined.selection,permute=TRUE,train.test.index=train.test.index,progress=progress,...) # check variance explained in X
 		if(progress==TRUE){print(paste0(round(i/length(filter)*100,0)," % complete"))}
-		rbind(data.frame(vars=top,model="included",optim$selected.train$performance),data.frame(vars=top,model="excluded",optim$excluded.train$performance))
+		# return model and permuted results
+		rbind(cbind(type="model",rbind(data.frame(vars=top,model="included",optim$selected.train$performance),data.frame(vars=top,model="excluded",optim$excluded.train$performance))),
+		cbind(type="permuted",rbind(data.frame(vars=top,model="included",optim$selected.permuted$performance),data.frame(vars=top,model="excluded",optim$selected.permuted$performance))))
 	})
 
 	#summary
 	obj<-do.call("rbind",optimal.feature.selection)
-	#get median and MAD for all levels
+	
+	#get summary
 	library(plyr)
-	medians<-ddply(obj,.(vars,model),colwise(median,na.rm=TRUE))
-	mads<-ddply(obj,.(vars,model),colwise(mad,na.rm=TRUE))
-	p.vals<-ddply(obj,.(vars),function(d.sub){multi.mann.whitney(d.sub[,-c(1:2)],factor=data.frame(d.sub$model),progress=progress)$mann.whitney.U.test_p.value})
-	colnames(p.vals)[2:ncol(p.vals)]<-colnames(medians)[3:ncol(medians)]
+	means<-ddply(obj,.(type,vars,model),colwise(mean,na.rm=TRUE))
+	sds<-ddply(obj,.(type,vars,model),colwise(sd,na.rm=TRUE))
 	
-	res<-list(all.results=do.call("rbind",optimal.feature.selection),summary=list(median=medians,mad=mads,p.values=p.vals))
+	#calculate p-values for the comparison
 	
-	if(plot){
-		#create a plot
-		plot.list<-list()
-		k<-1
-		for(i in 3:ncol(medians)){
-		value<-colnames(medians)[i]
-		tmp<-data.frame(value=medians[,value],error=mads[,value],model=medians$model,vars=medians$vars)
-
-		.theme<- theme(
-						axis.line = element_line(colour = 'gray', size = .75), 
-						panel.background = element_blank(),  
-						plot.background = element_blank()
-					 )
-					 
-		vlines<-p.vals$var[p.vals[,value]<=0.05]
-		if(length(vlines)>0){show.sig<-geom_vline(xintercept=vlines,linetype="dotted")}	else {show.sig<-NULL}										 
-		plot.list[[k]]<-ggplot(data = tmp, aes(x = vars, y = value,group=model) ) + 
-			 geom_errorbar(aes(ymin = value - error, ymax = value + error, fill=model,color=model), size=1, width=0.1) + # add error bars (do so before geom_point so the points are on top of the error bars)
-			 geom_line(aes(color=model),size=1) + # join points with lines (specify this before geom_point, or the lines will be drawn over the shapes)
-			 geom_point(aes(shape=model, fill=model,color=model), size=5) +ylab(value) +
-			 xlab("cutoff") + .theme + scale_x_continuous("cutoff", breaks=unique(tmp$vars)) +show.sig +extra
-			 k<-k+1
-		}
-		do.call("grid.arrange",plot.list)
-	}	
-	return(res)
+	#fxn
+	compare.mods<-function(mod.vals,perm.vals,test="perm.test",...){
+			lapply(1:ncol(mod.vals),function(i){
+                        if(names(mod.vals[i])%in%c("RMSEP","ER","FPR")) {dir<-">"} else {dir<-"<"} # used for permutation tests
+                        switch(test,
+                                "t.test"        = group.test(mod=mod.vals[,i],perm=perm.vals[,i]),
+                                "perm.test" = perm.test(mod=mod.vals[i],perm=perm.vals[,i],dir),
+								"perm.test2" = perm.test(mod=mod.vals[i],perm=perm.vals[,i],dir,type=2))        
+                        
+                })
+	}			
+	
+	#hack objects to fit 
+	#included to excluded
+	tmp.l<-split(obj,obj$type)
+	
+	#included vs. excluded
+	p.vals<-ddply(tmp.l[["model"]],.(vars),function(tmp,...){
+		tmp.obj<-tmp[,-c(1:3)]
+		id<-tmp$model=="included"
+		res<-data.frame(compare.mods(tmp.obj[id,],tmp.obj[!id,],...))
+		colnames(res)<-colnames(tmp)[-c(1:3)]
+		return(res)
+	})
+	
+	#model vs. permuted
+	tmp.l<-split(obj,obj$model)
+	#included vs. permuted
+	p.vals2<-ddply(tmp.l[["included"]],.(vars),function(tmp,...){
+		tmp.obj<-tmp[,-c(1:3)]
+		id<-tmp$type=="model"
+		res<-data.frame(compare.mods(tmp.obj[id,],tmp.obj[!id,],...))
+		colnames(res)<-colnames(tmp)[-c(1:3)]
+		return(res)
+	})
+	
+	#excluded vs. permuted
+	#included vs. permuted
+	p.vals3<-ddply(tmp.l[["excluded"]],.(vars),function(tmp,...){
+		tmp.obj<-tmp[,-c(1:3)]
+		id<-tmp$type=="model"
+		res<-data.frame(compare.mods(tmp.obj[id,],tmp.obj[!id,],...))
+		colnames(res)<-colnames(tmp)[-c(1:3)]
+		return(res)
+	})
+	#p.values
+	p.values<-data.frame(rbind(cbind(type="included vs. excluded",p.vals),cbind(type="included vs. permuted",p.vals2),cbind(type="excluded vs. permuted",p.vals3)))
+	
+	list(all.results=obj,summary=list(mean=means,sd=sds,p.values=p.values))	
 }	 
 
+#plot the results of multi.OPLS.feature.select
 plot.multi.OPLS.feature.select<-function(object,extra=NULL,objects=c("RMSEP","Q2","AUC","F","Sens","Spec","Precision","Recall")){
-	
-		medians<-object$summary$median[,-c(1:3)]
-		mads<-object$summary$mad[,-c(1:3)]
+		check.get.packages("gridExtra")
+		
+		means<-object$summary$mean[,-c(1:3)]
+		sds<-object$summary$sd[,-c(1:3)]
 		p.vals<-object$summary$p.values[,-c(1:2)]
-		model<-object$summary$median$model
-		vars<-object$summary$median$vars
+		model<-object$summary$mean$model
+		vars<-object$summary$mean$vars
+		model.type<-join.columns(data.frame(model,object$summary$mean$type),"_")
+		
 		#filter error columns
 		f<-function(x){sum(is.na(x))}
-		id<-!apply(medians,2,f)==nrow(medians)&colnames(medians)%in%objects #exclude all NA columns
-		medians<-medians[,id]
-		mads<-mads[,id]
+		id<-!apply(means,2,f)==nrow(means)&colnames(means)%in%objects #exclude all NA columns
+		means<-means[,id,drop=FALSE]
+		sds<-sds[,id,drop=FALSE]
 		p.vals<-p.vals[,id]
 		
 		.theme<- theme(
@@ -1865,9 +1893,9 @@ plot.multi.OPLS.feature.select<-function(object,extra=NULL,objects=c("RMSEP","Q2
 		
 		plot.list<-list()
 		k<-1
-		for(i in 1:ncol(medians)){
-		value<-colnames(medians)[i]
-		tmp<-data.frame(value=medians[,value],error=mads[,value],model=model,vars=vars)
+		for(i in 1:ncol(means)){
+		value<-colnames(means)[i]
+		tmp<-data.frame(value=means[,value],error=sds[,value],model=model.type,vars=vars)
 		vlines<-p.vals$var[p.vals[,value]<=0.05]
 		if(length(vlines)>0){show.sig<-geom_vline(xintercept=vlines,linetype="dotted")}	else {show.sig<-NULL}										 
 		plot.list[[k]]<-ggplot(data = tmp, aes(x = vars, y = value,group=model) ) + 
@@ -1877,16 +1905,22 @@ plot.multi.OPLS.feature.select<-function(object,extra=NULL,objects=c("RMSEP","Q2
 			 xlab("cutoff") + .theme + scale_x_continuous("cutoff", breaks=unique(tmp$vars)) +show.sig +extra
 			 k<-k+1
 		}
-		do.call("grid.arrange",plot.list)
+		#plot
+		if(length(plot.list)>1){
+			do.call("grid.arrange",plot.list)
+		} else {print(plot.list[[1]])}	
 
 }	 
 
 #extract best model
-best.OPLS.features<-function(obj=res,decreasing = TRUE,measures=c("AUC","Sens","Spec","Precision","Recall","TPR","F","Youden")){
+best.OPLS.features<-function(obj=res,decreasing = c("RMSEP"),measures=c("AUC","Sens","Spec","Precision","Recall","TPR","F","Youden")){
+	
 	#rank
-	tmp<-obj$summary$median[obj$summary$median$model=="included",]
-	.tmp<-tmp[,colnames(tmp)%in%measures]
-	.rank<-apply(.tmp,2,rank)
+	tmp<-obj$summary$mean[obj$summary$mean$model=="included"&obj$summary$mean$type=="model",,drop=FALSE]
+	.tmp<-tmp[,colnames(tmp)%in%measures,drop=FALSE]
+	# variables which need small is best rank need to be inverted
+	.tmp[,colnames(.tmp)%in%decreasing]<-1/.tmp[,colnames(.tmp)%in%decreasing]
+	.rank<-apply(.tmp,2,rank) #rank is decreasing
 	rmat<-matrix(.rank,,length(measures))
 	rowid<-matrix(1:nrow(rmat),nrow(rmat),ncol(rmat))[which.max(rmat)]
 	tmp[rowid,,drop=FALSE]
@@ -1952,9 +1986,11 @@ data(mtcars)
 	train.test.index <- test.train.split(nrow(pls.data), n = ntests, strata = strata, split.type = "random", data = pls.data) 
 	multi.train.test<-OSC.PLS.train.test(pls.data = pls.data, pls.y = pls.y, train.test.index, comp = mods$total.LVs[1], OSC.comp = max(mods$OSC.LVs), cv.scale = mods$model.description$cv.scale, progress = TRUE) # ...
 	# carry out model permutation testing
-	multi.permute<-permute.OSC.PLS(data = pls.data, y = pls.y, n = ntests, ncomp = mods$total.LVs[1], osc.comp=max(mods$OSC.LVs), progress = TRUE, train.test.index = train.test.index) #...
+	# multi.permute<-permute.OSC.PLS(data = pls.data, y = pls.y, n = ntests, ncomp = mods$total.LVs[1], osc.comp=max(mods$OSC.LVs), progress = TRUE, train.test.index = train.test.index) #...
+	multi.permute<-permute.OSC.PLS.train.test(pls.data = pls.data, pls.y = pls.y, perm.n = ntests, comp = mods$total.LVs[1], OSC.comp=max(mods$OSC.LVs), progress = TRUE, train.test.index = train.test.index)
+	
 	#compare actual to permuted model performance
-	(model.validation<-OSC.validate.model(model = mods, perm = multi.permute, train = multi.train.test,test="perm.test2"))
+	(model.validation<-OSC.validate.model(model = mods, perm = multi.permute, train = multi.train.test,test="perm.test"))
 
 	#feature selection
 	opts<-PLS.feature.select(pls.data,pls.scores=final.opls.results$scores[,][,1,drop=F],pls.loadings=final.opls.results$loadings[,][,1,drop=F],pls.weight=final.opls.results$loadings[,][,1,drop=F],plot=FALSE,p.value=0.1,FDR=TRUE,cut.type="number",top=3,separate=FALSE)
@@ -1962,11 +1998,12 @@ data(mtcars)
 	plot.S.plot(obj=opts,return="all")
 
 	#calculate included and excluded feature statistics
-	(optim<-optimize.OPLS.feature.select(model=opls.results,feature.subset=opts$combined.selection,permute=TRUE,train.test.index,progress=TRUE,test="perm.test2") )# check variance explained in X
+	(optim<-optimize.OPLS.feature.select(model=opls.results,feature.subset=opts$combined.selection,permute=TRUE,train.test.index,progress=FALSE,test="perm.test") )# check variance explained in X
 
-	#optimize model feature selection
-	res<-multi.OPLS.feature.select(model=opls.results,filter=filter,plot=FALSE,OPLSDA=TRUE,train.test.index=train.test.index) # use full model without training split as input
-	plot.multi.OPLS.feature.select(res) # viwe results
+	#optimize model feature selections 
+	filter<-seq(3,ncol(pls.data)-3) # number of variables to keep
+	res<-multi.OPLS.feature.select(model=opls.results,filter=filter,plot=FALSE,OPLSDA=TRUE,train.test.index=train.test.index, test="perm.test") # use full model without training split as input
+	plot.multi.OPLS.feature.select(res,objects=c("RMSEP","Q2")) # view results
 	best.OPLS.features(res) # extract best model
 }
 
@@ -1987,7 +2024,9 @@ data(mtcars)
 				
 	final.opls.results<-get.OSC.model(obj=opls.results,OSC.comp=1)		
 	(opls.model.text<-data.frame("Xvar"=c(0,round(cumsum(final.opls.results$Xvar)*100,2)),"Q2"=final.opls.results$Q2,"RMSEP"= final.opls.results$RMSEP)	)
-
+	#classification performance (on the training data)
+	opls.results$OPLSDA
+	
 	# predict class labels
 	ntests<-1
 	strata<-pls.y # use to control equivalent sampling from groups
@@ -2002,7 +2041,8 @@ data(mtcars)
 							train.test.index=train.test.index,
 							progress=FALSE,
 							OPLSDA=TRUE)	
-	#get classification stats
+	
+	#get classification stats (on test data)
 	final.opls.results<-get.OSC.model(obj=opls.results2,OSC.comp=1)
 	final.opls.results$OPLSDA.stats # perfect model
 
@@ -2017,7 +2057,7 @@ data(mtcars)
 	#try different thresholds for feature selection 
 	#wrapper to fit multiple models and validate
 	res<-multi.OPLS.feature.select(model=opls.results,filter=filter,plot=FALSE,OPLSDA=TRUE,train.test.index=train.test.index) # use full model without training split as input
-	plot.multi.OPLS.feature.select(res) # view results
+	plot.multi.OPLS.feature.select(res,objects="RMSEP") # view results
 	best.OPLS.features(res) # extract best model
 	#extract best model
 	

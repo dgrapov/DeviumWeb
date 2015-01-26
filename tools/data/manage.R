@@ -309,26 +309,41 @@ output$packData <- renderUI({
   selectInput(inputId = "packData", label = "Load package data:", choices = packDataSets, selected = '', multiple = FALSE)
 })
 
-output$htmlDataExample <- reactive({
-  if(is.null(input$datasets)) return()
+###-- replacing with nicer looking table
+# output$htmlDataExample <- reactive({
+  # if(is.null(input$datasets)) return()
 
-  dat <- getdata()
+  # dat <- getdata()
 
   # necessary when deleting a dataset
-  if(is.null(dat)) return()
+  # if(is.null(dat)) return()
 
   # Show only the first 10 rows
-  nr <- min(10,nrow(dat))
-  dat <- data.frame(dat[1:nr,, drop = FALSE])
+  # nr <- min(10,nrow(dat))
+  # dat <- data.frame(dat[1:nr,, drop = FALSE])
 
-  dat <- date2character_dat(dat)
+  # dat <- date2character_dat(dat)
 
-  html <- print(xtable::xtable(dat), type='html', print.results = FALSE)
-  html <- sub("<TABLE border=1>","<table class='table table-condensed table-hover'>", html)
-  Encoding(html) <- 'UTF-8'
-  html
+  # html <- print(xtable::xtable(dat), type='html', print.results = FALSE)
+  # html <- sub("<TABLE border=1>","<table class='table table-condensed table-hover'>", html)
+  # Encoding(html) <- 'UTF-8'
+  # html
 
-})
+# })
+
+# output$dataviewer <- reactive({
+output$manage_data_table <-renderDataTable({
+	validate(
+		need(!is.null(input$datasets) , "Please select a data set")
+	)
+
+  dat <- getdata()
+  data.frame(rownames=rownames(dat),dat)
+
+
+}, options = list(bSortClasses = TRUE, aLengthMenu = c(10, 20, 30, 50), iDisplayLength = 10))
+
+
 
 #give data structure for debug
 output$ManageDataStr <- renderPrint({

@@ -16,7 +16,7 @@ devium.heatmap<-function(data, class.factor=NULL, class.color=NULL, heatmap.colo
   
   # calculate correlations
   if(!type=="none"& !type == "z.scale" ){
-    tmp<-devium.calculate.correlations(tmp.data,type=type)
+    tmp<-devium.calculate.correlations(tmp.data,type=type,results="matrix")
     tmp.data<-tmp$cor
     tmp.data.pvalue<-tmp$p.value
     

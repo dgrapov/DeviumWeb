@@ -33,6 +33,17 @@ source.local.dir<-function(wd){
 source.local.dir(paste0(getwd(),"/R")) # final 
 # source.local.dir(Sys.glob(file.path("C:","Users","*","Dropbox","Devium","devium","R")))#development
 
+
+# install.packages("devtools")
+if(!require(plotly)){
+	if(!require(devtools){install.packages(devtools)}
+	library("devtools")
+	install_github("ropensci/plotly")
+	library(plotly)
+} 
+
+
+
 # R package dependencies
 #-----------------------
 options(repos = c(CRAN = "http://cran.rstudio.com"))

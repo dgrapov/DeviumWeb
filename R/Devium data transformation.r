@@ -1,5 +1,5 @@
 #test for normality
- normal.test<-function(var,test.method){
+normal.test<-function(var,test.method){
 			check.get.packages("nortest")
                 test<-switch(test.method,
 				# add "Kolmogorov-Smirno","Shapiro-Francia"
@@ -73,7 +73,6 @@ transform.to.normal.output<-function(obj,name="transformed.data", envir=devium){
 		assign(names(obj)[1],as.data.frame(data),envir=.GlobalEnv)
 		assign(names(obj)[2],data.frame(p.value=diagnostics[,1,drop=FALSE],transformation=as.factor(unlist(diagnostics[,2,drop=FALSE]))),envir=.GlobalEnv)
 		}
-
 
 #scaling for rows or columns
 scale.data<-function(data, type="median", dim=1,positive.only=TRUE){
@@ -214,58 +213,137 @@ make.positive<-function(obj){
 	sweep(obj,2,abs(mins),"+")
 }
 
-#calculate area under the curve (AUC) for multiple groups
-multi.group.AUC<-function(data,subject.id,sample.type, time){
-	library(pracma)
-	#too lazy to rename objects from older fxn
-	subject.id<-as.factor(subject.id)
-	fact<-as.factor(sample.type)	#sample type factor
-	tme<-as.factor(time)	#time	
+#merging data sets
+#---------------------------------------
+#wrapper for merge
+##merge two data sets based on a common index column
+## all unique levels of the index are preserved in the final object
+## i.e. no variables are dropped
+#issues: if variables are duplicated in data sets with same row ids then incorrect merge of data occurs
+merge.data.cube<-function(data1,data2,ID="merge.ID",col.meta="col.metadata",row.meta="row.metadata"){
+	# do full outer join on data
+	# base dimnames for merge on ID name in row- and col meta data
+	# do similar merge on the meta data
 	
-	#split objects
-	tmp.data<-split(data.frame(data),fact)
-	tmp.time<-split(tme,fact)
-	tmp.subs<-split(as.character(subject.id),fact)
+	#TODO
+	#if some variable is present for the same sample then need to default to data1 value
 	
-	group.AUC<-lapply(1:nlevels(fact),function(i){
-		ddata<-tmp.data[[i]]
-		ttime<-tmp.time[[i]]
-		subs<-tmp.subs[[i]]
-		
-		#calculate AUC
-		AUC<-sapply(1:length(ddata),function(i)
-		{
-			
-			obj<-split(as.data.frame(ddata[[i]]),subs)
-			#subtract baseline (first level of time) to correct negative AUC 
-			tmp.time<-split(ttime,subs)
-			base.time<-levels(ttime)[1]
-			base.obj<-lapply(1:length(obj),function(j)
-				{
-					tmp<-as.numeric(as.matrix(unlist(obj[[j]])))
-					tmp-tmp[tmp.time[[j]]==base.time]
-				})
-			tmp<-split(as.data.frame(ttime),subs)
-			#x11()
-			#plot(as.numeric(as.matrix(do.call("cbind",tmp))),as.numeric(as.matrix(do.call("cbind",base.obj))))
-			out<-as.data.frame(sapply(1:length(obj),function(j)
-			{
-				x<-as.numeric(as.matrix(unlist(tmp[[j]])))
-				o<-order(x) # need to be in order else AUC will be wrong!
-				y<-as.numeric(as.matrix(unlist(base.obj[[j]])))
-				trapz(x[o],y[o])
-			}))
-		colnames(out)<-colnames(data[i])
-		out
-		})
-		tmp<-do.call("cbind",AUC)
-		rownames(tmp)<-paste(levels(fact)[i],names(split(as.data.frame(ttime),subs)),sep="_")
-		tmp
-	})	
-	res<-do.call("rbind",group.AUC)
-	colnames(res)<-colnames(data)
-	return(res)
+	#need to make a simple common colname ID which is shared between the two data sets
+	full<-unique(c(fixlc(data1[[col.meta]][ ,ID]),fixlc(data2[[col.meta]][ ,ID])))
+	tmp.id<-data.frame(id=1:length(full))
+	rownames(tmp.id)<-full
+	tmp.id2<-data.frame(id=full) #to resort columns
+	
+	#merge fails with non numeric row ids?
+	full<-unique(c(fixlc(data1[[row.meta]][ ,ID]),fixlc(data2[[row.meta]][ ,ID])))
+	rtmp.id<-data.frame(id=1:length(full))
+	rownames(rtmp.id)<-full
+	rtmp.id2<-data.frame(id=full) #to resort columns
+	
+	#recode dimensions of both data sets based on row and col id
+	df1<-data.frame(data1$data)
+	dimnames(df1)<-list(fixlc(rtmp.id[data1[[row.meta]][ ,ID],]),fixlc(tmp.id[fixlc(data1[[col.meta]][ ,ID]),]))
+	df2<-data.frame(data2$data)
+	dimnames(df2)<-list(fixlc(rtmp.id[data2[[row.meta]][ ,ID],]),fixlc(tmp.id[fixlc(data2[[col.meta]][ ,ID]),]))
+	
+	#add row ID to make sure row meta is in the correct order
+	df1$._merge_tmp_ID<-fixlc(data1[[row.meta]][ ,ID])
+	df2$._merge_tmp_ID<-fixlc(data2[[row.meta]][ ,ID])
+	
+	#full outer join on the data
+	merged.data<-merge(df1,df2,all=TRUE,sort=FALSE)
+	id<-colnames(merged.data)%in%"._merge_tmp_ID"
+	row.id<-merged.data[,id]
+	merged.data<-merged.data[,!id]
+	
+	#row meta
+	.row.meta<-merge(data1[[row.meta]],data2[[row.meta]],all=TRUE,sort=FALSE)
+	rownames(.row.meta)<-make.unique(fixlc(.row.meta[,ID]))
+	.row.meta<-.row.meta[row.id,]
+	
+	#column meta
+	c1<-data1[[col.meta]]
+	rownames(c1)<-data1[[col.meta]][,ID]
+	c2<-data.frame(data2[[col.meta]])
+	rownames(c2)<-make.unique(fixlc(data2[[col.meta]][,ID]))
+	.col.meta<-merge(c1,c2,all=TRUE)
+	rownames(.col.meta)<-make.unique(fixlc(.col.meta[,ID]))
+
+	#format for return
+	tmp<-list(merged.data,.row.meta,.col.meta[fixlc(tmp.id2[fixln(colnames(merged.data)),]),])
+	names(tmp)<-c("data",row.meta,col.meta)
+	return(tmp)
 }
+
+# merge similar column names
+# filling in each others missing values
+col.merge.na<-function(obj,distance=1){
+	# convert to matrix to avoid dealing with factor
+	
+	obj<-tmp.obj<-as.matrix(obj)
+	
+	#loop on column number 
+	#exit loop when all non-unique columns are merged
+	# inputting missing values in the first instance with non-missing values in the next
+	res<-list()
+	name<-colnames(obj)
+	watcher<-1:length(name)
+	i<-1
+	while(length(watcher)>0){
+		name<-colnames(tmp.obj)
+		watcher<-1:length(name)
+		if(is.null(distance)){ 
+				id<-grep(name[1],name[-1],ignore.case = TRUE)+1  # account for avoiding self match
+			} else {
+				id<-agrep(name[1],name[-1],max.distance=distance,ignore.case = TRUE)+1  # account for avoiding self match
+		}	
+		if(length(id)==0) id<-1
+		if(id>1) {
+			out<-tryCatch(matrix(merge.na(tmp.obj[,1],tmp.obj[,id]),,1) ,error=function(e) {data.frame(rep("error",nrow(obj)))}) # >2 column merges not supported
+			colnames(out)<-name[1]  
+			fixed<-c(watcher[1],id)  
+		} else {
+			out<-obj[,i,drop=FALSE]
+			fixed<-watcher[1]
+		}
+		res[[i]]<-as.matrix(out)
+		watcher<-watcher[!watcher%in%fixed]
+		tmp.obj<-tmp.obj[,watcher,drop=FALSE]
+		# cat(paste(c("DROP--> ",colnames(obj)[(!colnames(obj)%in%colnames(tmp.obj))],"\n"),collapse=", "))
+		# print(c("HAVE--> ",sapply(res,colnames,"\n")))
+		i<-i+1
+	}
+	
+	return(data.frame(do.call("cbind",res)))
+	
+}
+
+#merge two vectors filling in NAs
+merge.na<-function(obj1,obj2){
+	tmp<-fixlc(obj1)
+	tmp[is.na(tmp)]<-fixlc(obj2)[is.na(tmp)]
+	tmp
+}
+
+#wrapper for for multiple column merge.na
+multiple.merge.na<-function(obj,name.char="_",prefix="merged"){
+	# obj is a data.frame
+	# name.char and prefix are used to construct a name for the merged object
+	tmp.obj<-obj
+	while(ncol(tmp.obj)>1){
+		tryCatch(tmp.obj[,1]<-matrix(merge.na(fixlc(tmp.obj[,1]),fixlc(tmp.obj[,2]))), error=function(e){})
+		tmp.obj<-tmp.obj[,-2,drop=FALSE]
+	}	
+	
+	#try to make a column name
+	# break on name and take the last element
+	tmp.n<-unlist(strsplit(colnames(tmp.obj), name.char))
+	colnames(tmp.obj)<-paste0(prefix,name.char,tmp.n[length(tmp.n)])
+	return(tmp.obj)
+}
+
+#trim trailing whitespace
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
 #tests
 test<-function(){
@@ -298,5 +376,41 @@ data(mtcars)
 data<-mtcars
 data$am<-factor(data$am)
 (x<-scale.data(data, type="uv", dim=2))
+
+
+#merge.data.cube
+#---------------------
+#data
+df1<-data.frame(matrix(1:10,10,10)) 
+df2<-data.frame(matrix(10:20,10,10))
+df3<-data.frame(matrix(c(20:30),10,10))
+#col meta
+df1.col<-cbind(merge.ID=c(1:5,11:15),info=1)
+df2.col<-cbind(merge.ID=c(1:5,21:25),info=2,info2=3)
+df3.col<-cbind(merge.ID=c(1:5,26:30),info=2,info2=3)
+#rowmeta
+df1.row<-cbind(merge.ID=c(1:10),info=1,info2=3)
+df2.row<-cbind(merge.ID=c(11:20),info=2)
+df3.row<-cbind(merge.ID=c(21:30),info=2)
+#create data cube
+data1<-list(data=df1,row.metadata=df1.row,col.metadata=df1.col)
+data2<-list(data=df2,row.metadata=df2.row,col.metadata=df2.col)
+data3<-list(data=df3,row.metadata=df3.row,col.metadata=df3.col)
+
+x<-tryCatch(merge.data.cube(data1,data2,ID="merge.ID"),error=function(e) {cat("merge.data.cube failed\n")}) # add error report info
+
+merge.data.cube(data1=x,data2=data3,ID="merge.ID")
+
+#multiple merge.na
+#----------------------
+obj<-matrix(1:10, 10,10,byrow=TRUE)
+set.seed(123)
+obj[sample(1:100,75)]<-NA
+colnames(obj)<-paste0(1:ncol(obj),"_variable")
+
+tryCatch(multiple.merge.na(obj),error=function(e){cat("multiple.merge.na<-->FAILED\n")})
+}
+
+
 
 }

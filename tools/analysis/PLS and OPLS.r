@@ -47,7 +47,7 @@ vars <- varnames()
  	vars <- vars[isNum]
   if(length(vars) == 0) return()
  
-  selectInput(inputId = "opls_groups", label = "Visualization variables:", choices = vars, multiple = TRUE)
+  selectInput(inputId = "opls_groups", label = "Groups", choices = vars, multiple = TRUE)
 })
 
 output$opls_pcs<-renderUI({
@@ -73,52 +73,57 @@ ui_opls <- function() {
   list(
   	wellPanel(
 		conditionalPanel(condition = "input.analysistabs=='Plots'",downloadButton('Download_opls_plot', label = "Download plot")),
-		br(),
-		h3('Calculate'),
-		tags$details(tags$summary("Model"),
-		uiOutput("opls_yvariables"), # Y works best for single y
-		uiOutput("opls_variables"), # variables
-		uiOutput("opls_pcs"),
-		uiOutput("opls_opcs"),
-		checkboxInput("opls_center","Center",TRUE),
-		selectInput("opls_scaling","Scale", list(none = "none", "unit variance" = "uv", pareto = "pareto"),selected="unit variance"),
-		selectInput("opls_method","Method", list("NIPALS"= "oscorespls","kernel" = "kernelpls", "wide kernel"= "widekernelpls")),	# need to figure which are loading weights for "SIMPLS"="simpls"
-		selectInput("opls_validation","Cross-validation", list(none = "none", "Leave-one-out"="LOO", "n-fold" = "CV"),selected="Leave-one-out")
-		),
-		tags$details(tags$summary("Validate"),
-			numericInput("opls_n_tests", "Number of tests:", value=0, min = 0,step=10),
-			checkboxInput("opls_permutation","Permutation testing?",TRUE),
-			checkboxInput("opls_internal_testing","Internal training/testing?",TRUE),
-			conditionalPanel(condition = "input.opls_internal_testing",
-				selectInput("opls_internal_testing_var","Training/testing index",as.list(c("random",varnames())),selected="random")
+			br(),
+			tags$details(open="open",tags$summary(tags$div(icon("fa fa-gears"),tags$label(style="font-size: 30px;","Calculate"),style="font-size: 30px; color: #EF3732;")),
+				tags$details(open="open",tags$summary(tags$div(icon("fa fa-gear"),tags$label(style="font-size: 20px; color: #13A6EA;","Model"),style="font-size: 20px; color: #13A6EA;")),
+				uiOutput("opls_yvariables"), # Y works best for single y
+				uiOutput("opls_variables"), # variables
+				uiOutput("opls_pcs"),
+				uiOutput("opls_opcs"),
+				checkboxInput("opls_center","Center",TRUE),
+				br(),
+				selectInput("opls_scaling","Scale", list(none = "none", "unit variance" = "uv", pareto = "pareto"),selected="unit variance"),
+				selectInput("opls_method","Method", list("NIPALS"= "oscorespls","kernel" = "kernelpls", "wide kernel"= "widekernelpls")),	# need to figure which are loading weights for "SIMPLS"="simpls"
+				selectInput("opls_validation","Cross-validation", list(none = "none", "Leave-one-out"="LOO", "n-fold" = "CV"),selected="Leave-one-out")
+				),
+				tags$details(tags$summary(tags$div(icon("fa fa-eye"),tags$label(style="font-size: 20px; color: #13A6EA;","Validation"),style="font-size: 20px; color: #13A6EA;")),
+					numericInput("opls_n_tests", "Number of tests:", value=0, min = 0,step=10),
+					checkboxInput("opls_permutation","Permutation test",TRUE),
+					checkboxInput("opls_internal_testing","Training/test cross-validation",TRUE),
+					conditionalPanel(condition = "input.opls_internal_testing",
+						selectInput("opls_internal_testing_var","Training/testing index",as.list(c("random",varnames())),selected="random"),
+						selectInput("opls_cv_comparison_test","Comparison test",list("permutation test" = "perm.test","t-test"="t.test","ratio test"="perm.test2"),selected="permutation test")
+					)#,
+				#not implemented below
+				# checkboxInput("opls_external_testing","External training/testing?",TRUE),
+				# conditionalPanel(condition = "input.opls_external_testing",
+					# selectInput("opls_external_testing_var","Training/testing index",as.list(c("random","duplex",varnames())),selected="random")
+				# )
+				),
+				tags$details(tags$summary(tags$div(icon("fa fa-sort-amount-desc"),tags$label(style="font-size: 20px; color: #13A6EA;","Feature Selection"),style="font-size: 20px; color: #13A6EA;")),
+					# checkboxInput("opls_feature_selection","Identify top predictors?",FALSE),
+					#options
+					selectInput("opls_feature_selection_type","Selection type:",list(none="none",quantile = "quantile",number = "number"),selected="none",multiple=FALSE),
+					numericInput("opls_feature_selection_type_value", "Top percent", value=10, min = 0,max=100,step=5),
+					# conditionalPanel(condition = "input.opls_feature_selection_type == 'quantile'",
+						# numericInput("opls_feature_selection_type_value_quant", "Top percent", value=10, min = 0,max=100,step=5)
+					# ),
+					# conditionalPanel(condition = "input.opls_feature_selection_type == 'number'",
+						# numericInput("opls_feature_selection_type_value_rank", "Top number", value=2, min = 1,step=1)
+					# ),
+					# h5('Correlation with Scores'),
+					conditionalPanel(condition = "input.opls_feature_selection_type != 'none'",
+						selectInput("opls_feature_selection_feature_weight","Weight:",list("loading","coefficient","VIP"),selected="loading",multiple=FALSE),
+						selectInput("opls_feature_selection_cor_type","Type:",list("spearman","pearson","biweight"),selected="spearman",multiple=FALSE),
+						numericInput("opls_feature_selection_p_val", "p-value:", value=0.05, min = 0,max=1,step=0.005),
+						checkboxInput("validate_selected_features", "Validate",FALSE),
+						br(),
+						checkboxInput("opls_feature_selection_FDR","FDR",TRUE),
+						checkboxInput("opls_feature_selection_separate","separate signs",FALSE)
+					)
+				)
 			),
-			checkboxInput("opls_external_testing","External training/testing?",TRUE),
-			conditionalPanel(condition = "input.opls_external_testing",
-				selectInput("opls_external_testing_var","Training/testing index",as.list(c("random","duplex",varnames())),selected="duplex")
-			)
-		),
-		tags$details(tags$summary("Select Features"),
-			# checkboxInput("opls_feature_selection","Identify top predictors?",FALSE),
-			#options
-			selectInput("opls_feature_selection_type","Selection type:",list(none="none",quantile = "quantile",number = "number"),selected="none",multiple=FALSE),
-			numericInput("opls_feature_selection_type_value", "Top percent", value=10, min = 0,max=100,step=5),
-			# conditionalPanel(condition = "input.opls_feature_selection_type == 'quantile'",
-				# numericInput("opls_feature_selection_type_value_quant", "Top percent", value=10, min = 0,max=100,step=5)
-			# ),
-			# conditionalPanel(condition = "input.opls_feature_selection_type == 'number'",
-				# numericInput("opls_feature_selection_type_value_rank", "Top number", value=2, min = 1,step=1)
-			# ),
-			# h5('Correlation with Scores'),
-			conditionalPanel(condition = "input.opls_feature_selection_type != 'none'",
-			selectInput("opls_feature_selection_feature_weight","Weight:",list("loading","coefficient","VIP"),selected="loading",multiple=FALSE),
-			selectInput("opls_feature_selection_cor_type","Type:",list("spearman","pearson","biweight"),selected="spearman",multiple=FALSE),
-			numericInput("opls_feature_selection_p_val", "p-value:", value=0.05, min = 0,max=1,step=0.005),
-			checkboxInput("opls_feature_selection_FDR","FDR",TRUE),
-			checkboxInput("opls_feature_selection_separate","separate signs",FALSE)
-			)
-		),
-		h3('Plot'),
-			tags$details(tags$summary("Options"),	
+			tags$details(tags$summary(tags$div(icon("fa fa-bar-chart-o"),tags$label(style="font-size: 30px;","Visualize"),style="font-size: 30px; color: #EF3732;")),
 				selectInput("opls_plot","Plot type",
 					list ("RMSEP" 	= "RMSEP",
 					"Scores" 		= "scores", 
@@ -133,7 +138,7 @@ ui_opls <- function() {
 								conditionalPanel(condition = "input.opls_plot != 'loadings'",
 									uiOutput("opls_groups")
 								),
-								selectInput("opls_group_bounds","Boundary:",list (none = "none", ellipse =  "ellipse",polygon = "polygon"),selected="ellipse"),
+								selectInput("opls_group_bounds","Show",list (none = "none", ellipse =  "ellipse",polygon = "polygon"),selected="ellipse"),
 								conditionalPanel(condition = "input.opls_group_bounds != 'none'",
 									numericInput("opls_group_alpha", "Transparency:",value=.35, min = 0,max=1,step=.1)
 								)
@@ -156,16 +161,15 @@ ui_opls <- function() {
 						)		
 				)
 			),	
-		h3('Save'),
-			tags$details(tags$summary("Objects"),
+			tags$details(tags$summary(tags$div(icon("fa fa-save"),tags$label(style="font-size: 30px;","Save"),style="font-size: 30px; color: #EF3732;")),
 				selectInput("opls_result_obj","",choices=c("-----" = ""),selected = "-----",multiple=TRUE),#,values[["opls_objects"]]$return_obj_name),
 				actionButton("save_opls_result_obj", "Save")
 			)
-		)
 		# with modal included the header size tags (e.g. h4, h5) are not interpreted?
 		# br(),
  		# helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
+  )		
 }
 
 #update plot options based on chosen inputs
@@ -226,7 +230,7 @@ opls <- reactive({
 						OSC.comp=input$opls_o_pcs, 
 						validation = input$opls_validation, 
 						method=input$opls_method, 
-						cv.scale=cv.scale, 
+						cv.scale = cv.scale, 
 						train.test.index=NULL,
 						OPLSDA=is.OPLSDA,
 						progress=FALSE)					
@@ -334,35 +338,49 @@ opls <- reactive({
 			} else {
 				strata<-NULL
 			} 
-				int.train.test.index <- test.train.split(nrow(scaled.data), n = ntests, strata = strata, split.type = train.id, data = scaled.data)	
+				int.train.test.index <- values$int.train.test.index<- test.train.split(nrow(scaled.data), n = ntests, strata = strata, split.type = train.id, data = scaled.data)	
 				tmp<-rbind(as.matrix(mod.description),"Internal train/test index"=paste0(ntests," repetitions ","generated by ",train.id))
 				mod.description<-data.frame(tmp)
 				
 		} else {
 				#user specified train/test need to be "train" and "test" (add 1, 0 where 1=test)
-				int.train.test.index<-getdata()[,input$opls_internal_testing_var,drop=FALSE]
+				int.train.test.index<-values$int.train.test.index<-getdata()[,input$opls_internal_testing_var,drop=FALSE]
 				if(!length(c("test","train")%in%unique(int.train.test.index))==2)
 				int.train.test.index<-NULL
 				tmp<-rbind(as.matrix(mod.description),"Internal train/test index" = "Custom input needs top be 'test' or 'train'")
 				mod.description<-data.frame(tmp)
 			}
-	} else {int.train.test.index<-NULL}
+	} else {int.train.test.index<-values$int.train.test.index<-NULL}
 			
 	#permutation testing (may use int.test.train.index) #TODO: switch to updated function
 	if(input$opls_n_tests>0&input$opls_permutation==TRUE){
-		permutation.results<-values$opls.permutation.results<-permute.OSC.PLS(data = scaled.data, y = pls.y, 
-			n = input$opls_n_tests, ncomp = input$opls_pcs, 
-			osc.comp = input$opls_o_pcs, 
-			train.test.index = int.train.test.index,
-			OPLSDA=is.OPLSDA,
-			progress = FALSE)
+		# permutation.results<-values$opls.permutation.results<-permute.OSC.PLS(data = scaled.data, y = pls.y, 
+			# n = input$opls_n_tests, ncomp = input$opls_pcs, 
+			# osc.comp = input$opls_o_pcs, 
+			# train.test.index = int.train.test.index,
+			# OPLSDA=is.OPLSDA,
+			# progress = FALSE)
+		#updated permutation fxn which is more consistent with train.test	
+		permutation.results<-values$opls.permutation.results<-permute.OSC.PLS.train.test(
+									pls.data 			= scaled.data, 
+									pls.y 				= pls.y, 
+									perm.n 				= input$opls_n_tests, 
+									comp 				= input$opls_pcs, 
+									OSC.comp 			= input$opls_o_pcs, 
+									progress 			= FALSE, 
+									train.test.index 	= values$int.train.test.index,
+									OPLSDA 				= is.OPLSDA)
+		
 	} else {
 		permutation.results<-NULL
 	}	
 	
 	#carry out training/testing	and or permutations (limiting to first Y)
 	if(input$opls_n_tests>0&input$opls_internal_testing==TRUE){
-			int.test.train.results<-values$int.test.train.results<-OSC.PLS.train.test(pls.data = scaled.data, pls.y = pls.y[,1,drop=FALSE], train.test.index=int.train.test.index,
+			int.test.train.results<-values$int.test.train.results<-OSC.PLS.train.test(
+									pls.data = scaled.data, 
+									pls.y = pls.y[,1,drop=FALSE], 
+									train.test.index=values$int.train.test.index,
 									comp = input$opls_pcs, 
 									OSC.comp = input$opls_o_pcs, 
 									cv.scale = cv.scale,
@@ -371,61 +389,38 @@ opls <- reactive({
 									OPLSDA=is.OPLSDA,
 									progress = FALSE)
 							
-			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = int.test.train.results,test="perm.test2")
+			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = int.test.train.results,test=input$opls_cv_comparison_test)
 			int.test.perf<-model.performance
 		} else {
 			
-			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = NULL,test="perm.test2")
+			model.performance<-OSC.validate.model(model = values$final.opls.results, perm = permutation.results, train = NULL,test=input$opls_cv_comparison_test)
 			int.test.perf<-model.performance
 		}
 	
-	# #carry out validations on feature selected object
-	# if(exists("opls.sel.data")){
-		# sel.scaled.data<-scaled.data<-data.frame(prep(opls.sel.data,center=input$opls_center,scale=input$opls_scaling))		
-		# #permutation testing (may use int.test.train.index)
-		# if(input$opls_n_tests>0&input$opls_permutation==TRUE){
-			# sel.permutation.results<-values$sel.opls.permutation.results<-permute.OSC.PLS(data = sel.scaled.data, y = pls.y, 
-				# n = input$opls_n_tests, ncomp = input$opls_pcs, 
-				# osc.comp = input$opls_o_pcs, 
-				# train.test.index = int.train.test.index,
-				# progress = FALSE)
-		# } else {
-			# sel.permutation.results<-NULL
-		# }	
+	# Validate selected features
+	if(input$validate_selected_features == TRUE){
+		if(any(is.null(values$opls.results) | is.null(values$opls.selected.features$combined.selection) | is.null(values$int.train.test.index))){
+			values$opls_selected_features_validation<-"Check validation options." 
+			#list(is.null(values$opls.results) , is.null(values$opls.selected.features$combined.selection) , is.null(values$int.train.test.index))
 		
-		# #carry out training/testing	and or permutations (limiting to first Y)
-		# if(input$opls_n_tests>0&input$opls_internal_testing==TRUE){
-			# sel.model<-make.OSC.PLS.model(pls.y,pls.data=sel.scaled.data,
-							# comp=input$opls_pcs,
-							# OSC.comp=input$opls_o_pcs, 
-							# validation = input$opls_validation, 
-							# method=input$opls_method, 
-							# cv.scale=cv.scale, 
-							# train.test.index=NULL,
-							# progress=FALSE)				
-			# sel.int.test.train.results<-values$sel.int.test.train.results<-OSC.PLS.train.test(pls.data = sel.scaled.data, pls.y = pls.y[,1,drop=FALSE], train.test.index=int.train.test.index,
-									# comp = input$opls_pcs, 
-									# OSC.comp = input$opls_o_pcs, 
-									# cv.scale = cv.scale,
-									# validation = input$opls_validation, 
-									# method=input$opls_method,
-									# progress = FALSE)
-			# sel.model.performance<-OSC.validate.model(model = sel.model, perm = sel.permutation.results, train = sel.int.test.train.results)
-			# sel.int.test.perf<-sel.model.performance
-		# } else {
-			# sel.model<-make.OSC.PLS.model(pls.y,pls.data=sel.scaled.data,
-							# comp=input$opls_pcs,
-							# OSC.comp=input$opls_o_pcs, 
-							# validation = input$opls_validation, 
-							# method=input$opls_method, 
-							# cv.scale=cv.scale, 
-							# train.test.index=NULL,
-							# progress=FALSE)			
-			# sel.model.performance<-OSC.validate.model(model = sel.model, perm = sel.permutation.results, train = NULL)
-			# sel.int.test.perf<-sel.model.performance
-		# }
-		
-	# }
+		} else {
+			
+			#need to fix model description else get into scoping trouble or need to pass input to the function
+			model<-values$opls.results
+			model$model.description$validation 	<- input$opls_validation
+			model$model.description$method 		<- input$opls_method
+			model$model.description$cv.scale 	<- cv.scale
+			# debug(optimize.OPLS.feature.select)
+			optim<-values$opls_selected_features_validation<-tryCatch(optimize.OPLS.feature.select(
+				model 					= model,
+				feature.subset 			= values$opls.selected.features$combined.selection,
+				permute 				= input$opls_permutation,
+				train.test.index 		= values$int.train.test.index,
+				progress 				= FALSE,
+				test 					= input$opls_cv_comparison_test)$summary, 
+				error 					= function(e) {list(paste("Something went wrong. Make sure the model has >3 variables./nerror=",e))})
+		}		
+	}
 	
 	
 	# #--------------------------------------------
@@ -451,7 +446,16 @@ opls <- reactive({
 	opls_result_objects<-c(opls_result_objects,name)
 	
 	values$opls_result_objects<-unlist(unique(opls_result_objects)) #all results
-	return(list(description=mod.description,statistics = opls.model.text,OPLSDA=OPLSDA.text,"Validated Model Performance (Y1)"=int.test.perf,selected.features=summary.selected.features))
+	return(
+		list(
+			'Model Description' 				= mod.description,
+			'Model Statistics' 					= opls.model.text,
+			'Classification Statistics' 		= OPLSDA.text,
+			'Validation Statistics' 			= int.test.perf,
+			'Selected Features Validation' 		= values$opls_selected_features_validation,
+			'Selected Features' 				= summary.selected.features
+		)
+	)
 	
 })
 

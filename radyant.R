@@ -196,3 +196,21 @@ output$plots <- renderPlot({
 
 }, width=plotWidth, height=plotHeight)
 
+output$plotly <- renderUI({
+
+	# plotting could be expensive so only done when tab is being viewed
+	if(input$tool == 'data' || input$analysistabs != 'Plotly') return()
+
+	# call analysis reactive
+	result <- get(input$tool)()
+	if(!is.character(result)) {
+		# pass analysis results to the plotting function
+		f <- get(paste("plotly",input$tool,sep = '.'))
+		f(result)
+	} else {
+		# used when no analysis is conducted (e.g., no variables selected yet)
+		plot(x = 1, type = 'n', main=result, axes = FALSE, xlab = "", ylab = "")
+	}
+
+})
+

@@ -22,33 +22,58 @@ shinyServer(function(input, output, session) {
 
 	# data tabs
 	output$ui_data_tabs <- renderUI({
-    tabsetPanel(id = "datatabs",
-      tabPanel("Manage", 
-	  htmlOutput("htmlDataExample"), 
-      	HTML('<label>10 (max) rows shown. See View-tab for details.</label>'),
-	      conditionalPanel(condition = "input.man_add_descr == false",
-	      	HTML(dataDescriptionOutput())
-	      ),
-	      conditionalPanel(condition = "input.man_add_descr == true",
- 	  	  	HTML("<label>Add data description:</label>"),
-		  	  tags$textarea(id="man_data_descr", rows="10", cols="12", dataDescriptionOutput('md'))
-		  	),
-		  verbatimTextOutput("ManageDataStr") # give data structure	
-     	),
-      # tabPanel("View", htmlOutput("dataviewer")),
-      tabPanel("View", dataTableOutput("dataviewer")),
+		tabsetPanel(id = "datatabs",
+			tabPanel("Overview",  # was called manage and uses manage ui
+			# #add collapsable panels with shinBS !!! only works one time then goes non-responsive??
+				# # bsCollapse(multiple = TRUE, open = NULL, id = "overview_collapse",
+					# bsCollapsePanel("Table", dataTableOutput("manage_data_table"), id="overview_collapse_1", value="test1")
+				# # )
+					# # bsCollapsePanel("Summary", verbatimTextOutput("ManageDataStr"), id="overview_collapse_2", value="test2"),
+					# # bsCollapsePanel("Description",
+						# # conditionalPanel(condition = "input.man_add_descr == false",
+							# # HTML(dataDescriptionOutput())
+						# # ),
+						# # conditionalPanel(condition = "input.man_add_descr == true",
+							# # HTML("<label>Add data description:</label>"),
+							  # # tags$textarea(id="man_data_descr", rows="10", cols="12", dataDescriptionOutput('md'))
+						# # ),
+						# # id="overview_collapse_3", value="test3"
+					# # )			
+					
+				# # )
+				hr(),
+				tags$details(open="open",tags$summary(tags$div(icon("fa fa-table"),tags$label(style="font-size: 30px;","Table"),style="font-size: 30px; color: #EF3732;")),
+					dataTableOutput("manage_data_table")
+				),
+				hr(),
+				tags$details(tags$summary(tags$div(icon("fa fa-list-alt"),tags$label(style="font-size: 30px;","Summary"),style="font-size: 30px; color: #EF3732;")),
+					verbatimTextOutput("ManageDataStr")
+				),
+				hr(),
+				tags$details(tags$summary(tags$div(icon("fa fa-book"),tags$label(style="font-size: 30px;","Description"),style="font-size: 30px; color: #EF3732;")),
+					conditionalPanel(condition = "input.man_add_descr == false",
+							HTML(dataDescriptionOutput())
+					),
+					conditionalPanel(condition = "input.man_add_descr == true",
+						HTML("<label>Add data description:</label>"),
+						  tags$textarea(id="man_data_descr", rows="10", cols="12", dataDescriptionOutput('md'))
+					)
+				)
+			 
+			),
 
-      # tabPanel("Visualize", plotOutput("visualize", width = "100%", height = "100%")), move to navbar
-      # tabPanel("Explore", verbatimTextOutput("expl_data"), plotOutput("expl_viz", width = "100%", height = "100%")),
-      # tabPanel("Merge", #   HTML('<label>Merge data.<br>In progress. Check back soon.</label>') # ),
-      tabPanel("Transform", htmlOutput("transform_data"), verbatimTextOutput("transform_summary")),
-      tabPanel("About", includeRmd("about.Rmd")),
-	  # conditionalPanel(condition = "values.debug_on == 'TRUE'",
-	  tabPanel("Debug", verbatimTextOutput("debug")) # turn on return of input and values
-		# )
-    )
+			tabPanel("Transform", htmlOutput("transform_data"), verbatimTextOutput("transform_summary")),
+			#should test for internet if not show local else show iframe (when website built)
+			tabPanel("About", includeRmd("about.Rmd")),
+			# conditionalPanel(condition = "values.debug_on == 'TRUE'",
+			tabPanel("Debug", verbatimTextOutput("debug")) # turn on return of input and values
+			# )
+		)
 	})
 
+	#updateCollapse(session, id = "overview_collapse", multiple = TRUE, open = "overview_collapse", close = NULL) # unresponsive after first laod
+	
+		
 	dataDescriptionOutput <- function(ret = 'html') {
 
  		dataDescr <- paste0(input$datasets,"_descr")
@@ -116,6 +141,26 @@ shinyServer(function(input, output, session) {
 	  }
 	})
 
+	#UPDATE DATA tab alert
+	observe({
+		if(is.null(input$datasets)) return()
+		message<-NULL
+		dat<-getdata()
+		if(sum(is.na(dat))>0) message<-paste("The data has",sum(is.na(dat)),"missing value(s), which should be imputed prior to some analyses.")
+		
+		if(is.null(message)) return()
+			createAlert(session, inputId = "DATA_anchor",
+				message = message,
+				type = "danger",
+				dismiss = TRUE,
+				block = TRUE,
+				append = FALSE
+			)
+		
+	})
+	
+
+	
 	# From Joe Cheng's post at:
 	# https://groups.google.com/forum/?fromgroups=#!searchin/shiny-discuss/close$20r/shiny-discuss/JptpzKxLuvU/boGBwwI3SjIJ
 	# session$onSessionEnded(function() {

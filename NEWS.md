@@ -1,10 +1,17 @@
+
+
 ### Features and Fixes
+#### version 0.4 (1/25/2015)
+    * added missing values validation
+    * added plotly interface
+    * O-PLS feature selection validation
+    * removed view and updated manage
+    * added custom icons and CSS
+    * added responsive navigation bar
 #### version 0.3.2 (11/01/14)
-    * fixed repeated measures ANOVA
-    
+    * fixed repeated measures ANOVA  
 #### version 0.3.1 (10/09/14)
     * fixed fold change calculation bug
-    
 #### version 0.3.0 (09/24/14)
     * added normalization module
     * added pathway enrichment analysis module under Biochemical
@@ -14,4 +21,3 @@
     * added new plot types, stats and fixed minor bugs in the PLot module
     * disabled multi Y O/PLS (temporary?) and added O/PLS-DA stats
     * new progress indicator
-

@@ -2020,9 +2020,12 @@ set.node.color<-function(obj,inc.lev="triangle",dec.lev="vee",no.lev="ellipse",i
 #simpler of the one above
 clean.edgeList<-function(data,source="source",target="target",type=NULL){
 	
+	#source and target should be numeric or will be coerced to numeric
+	data[,source]<-fixln(data[,source])
+	data[,target]<-fixln(data[,target])
 	
 	#remove self edges
-	id<-data[,source]==data[,target]
+	id<-data[,source]==data[,target] 
 	data<-data[!id,]
 	
 	if(!is.null(type)){

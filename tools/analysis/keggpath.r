@@ -83,7 +83,7 @@ output$keggpath_data_select<-renderUI({
 ui_keggpath <- function() {
 	list(
 		wellPanel(
-			actionButton("keggpath_calculate", "Calculate"),	
+			actionButton("keggpath_calculate", tags$div(icon("fa fa-magic"),tags$label(style="font-size: 30px;","Calculate"),style="font-size: 30px; color: #EF3732;")),	
 			h3('Metabolites'),
 			tags$details(open="open",tags$summary("Choose"),
 				uiOutput("keggpath_data_select")

@@ -1,6 +1,13 @@
 ui_About <- function() {
+#put version info here
 
 }
+
+# output$about <- renderUI({
+  # tags$iframe(
+  # seamless="seamless", style="width:100%; height:700px;",
+  # src="")
+# })
 
 # not yet implemented
 update_radyant <- reactive({

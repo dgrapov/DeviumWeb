@@ -5,22 +5,22 @@ data(mtcars)
 data<-mtcars
 data$am<-factor(data$am)
 data$vs<-factor(data$vs)
-plot.obj<-input<-list()
-plot.obj$data<-data
-plot.obj$xvar<-data[,1]
-plot.obj$yvar<-data[,2]
-plot.obj$group<-factor(data$am)
-plot.obj$plot.type<-"scatter_plot"
-plot.obj$size.mapping<-"absolute"
-font.size<-1
-
-
+input<-list()
+input$full.data.obj<-data
+input$y_var<-colnames(data)[1]
+input$x_var<-colnames(data)[2]
+input$group_var<-"am"
+input$plot_type<-"scatter_plot"
+input$size_mapping<-"absolute"
+input$size<-1
+input$font.size<-1
 input$y_facet<-"vs"
 input$x_facet<-"am"
-input$group_var<-"am"
-input$x_var<-colnames(data)[1]
-input$y_var<-colnames(data)[2]
-size.lab<-""
+
+make.ggplot(input)
+
+
+
 
 }
 
@@ -34,7 +34,7 @@ make.ggplot<-function(input) {
 	# need:
 	plot.obj$plot.type<-input$plot_type
 	#data
-	plot.obj$data<-getdata()
+	plot.obj$data<-input$full.data.obj #getdata() 
 	plot.obj$xvar<-plot.obj$data[,colnames(plot.obj$data)%in%input$x_var]
 	plot.obj$yvar<-plot.obj$data[,colnames(plot.obj$data)%in%input$y_var]
 	
@@ -42,7 +42,17 @@ make.ggplot<-function(input) {
 	# variables to map
 	#-----------------
 	#some conditional variables may not have been loaded yet and will error if?
-	plot.obj$group<-plot.obj$data[,colnames(plot.obj$data)%in%input$group_var] # color
+	plot.obj$group<-plot.obj$data[,colnames(plot.obj$data)%in%input$group_var,drop=FALSE] # color
+	# bind if multi column
+	if(!is.null(plot.obj$group)){
+		if(ncol(plot.obj$group)>1){
+			plot.obj$group<-join.columns(plot.obj$group)
+		} else {
+			#need to drop column name
+			plot.obj$group<-plot.obj$group[,]
+		} 
+	}
+	
 	if(plot.obj$plot.type == "scatter_plot"){
 		plot.obj$size<-if(input$size_mapping=="variable"){
 				size.lab<-input$size_variable
@@ -80,7 +90,8 @@ make.ggplot<-function(input) {
 	#create ggplot data object
 	#need to make sure input is not NULL and has length != 0
 	#main data object (has to be a better way)
-	tmp.data<-data.frame( 	group	= if(length(plot.obj$group)>0){ join.columns(plot.obj$group) } else { data.frame(group=0) }, # color bad naming
+	tmp.data<-data.frame( 	
+							group	= if(length(plot.obj$group)>0){ plot.obj$group } else { data.frame(group=0) }, # color bad naming
 							yvar	= if(length(plot.obj$yvar)>0){ 	plot.obj$yvar } else { data.frame(yvar=0) }, 
 							xvar	= if(length(plot.obj$xvar)>0){ 	plot.obj$xvar } else { data.frame(xvar=0) },
 							size	= if(length(plot.obj$size)>0){ plot.obj$size } else { data.frame(size=0) },
@@ -89,20 +100,21 @@ make.ggplot<-function(input) {
 										if(!input$y_facet ==".") {	
 												plot.obj$data[,colnames(plot.obj$data)%in%input$y_facet,drop=FALSE]
 											} else { 
-												data.frame(y.facet=0) 
+												data.frame(facet.y=0) 
 											}
 										},
 							facet.x	= if(length(input$x_facet)>0){ 
 										if(!input$x_facet ==".") {	
 												plot.obj$data[,colnames(plot.obj$data)%in%input$x_facet,drop=FALSE]
 											} else { 
-												data.frame(x.facet=0) 
+												data.frame(facet.x=0) 
 											}
 										}			
-							)
+						)
 	
 	#set order for drawing groups
 	tmp.data$group<-factor(tmp.data$group,levels=unique(tmp.data$group), ordered=TRUE)
+
 	
 	#label scatter plot points
 	lab.offset<-input$viz_labels_text_y_offset
@@ -133,6 +145,7 @@ make.ggplot<-function(input) {
 	facet.type<-paste(input$y_facet, '~', input$x_facet)
 	if (facet.type != '. ~ .') {facet.type<-facet_grid(facet.type)} else {facet.type<-NULL}
 
+	# tmp.data$facet.x<-tmp.data$facet.y<-NULL
 	
 	#color pallet 
 	#right now every thing is treated as a discreet variable
@@ -317,17 +330,84 @@ make.ggplot<-function(input) {
 	
 	#add facets and color scale
 	p<-p + facet.type + color.scale
-	print(p)
+	
+	#control for ggplot 2 or plotly
+	# if(input$plotly_or_ggplot == "ggplot2"){
+		# print(p)
+	# } else {
+		return(p)
+	# }	
 }
 
-#functions controlling various output
-plot.visualize <- function(result){
+# debug(make.ggplot)
+
+# #functions controlling various output
+# plot.visualize <- function(result){
+	# if(is.null(input$datasets)) return()
+	# if(input$analysistabs != 'Plots') return()
+	# if(input$plotly_or_ggplot == "ggplot2"){
+		# make.ggplot(values$visualize.objects)
+	# } else {
+	# # plotly functions
+	# plotly.credentials<-initialize_plotly() # initialize
+	# py<-plotly(plotly.credentials$username, plotly.credentials$api_key, "https://plot.ly") # Open Plotly connection
+	# plot<-make.ggplot(values$visualize.objects)
+	# res<-py$ggplotly(plot, kwargs=list(filename="DeviumWeb",
+                                           # fileopt="overwrite", # Overwrite plot in Plotly's website
+                                           # auto_open=FALSE))
+
+    # tags$iframe(src=res$response$url,
+                  # frameBorder="0",  # Some aesthetics
+                  # style="width:100%; height:700px;")
+	
+	# }
+	
+	
+# }#, width = viz_plot_width, height = viz_plot_height)
+
+plot.visualize<-function(input){
 	if(is.null(input$datasets)) return()
-	if(input$analysistabs != 'Plots') return()
+	# if(input$analysistabs != 'Plots') return()
+	# if(input$plotly_or_ggplot == "ggplot2"){
+		print(make.ggplot(values$visualize.objects))
+
+	# } else {return()}
+}
+
+plotly.visualize<-function(input){ 
+	if(is.null(input$datasets)) return()
+	# if(input$analysistabs != 'Plotly') return()
+	# if(input$plotly_or_ggplot == "plotly"){
+	# plotly functions
+	plotly.credentials<-initialize_plotly() # initialize
+	py<-plotly(plotly.credentials$username, plotly.credentials$api_key, "https://plot.ly") # Open Plotly connection
+	plot<-make.ggplot(values$visualize.objects)
+	res<-tryCatch(py$ggplotly(plot, kwargs=list(filename="DeviumWeb",
+                                           fileopt="overwrite", # Overwrite plot in Plotly's website
+                                           auto_open=FALSE)), error=function(e){NULL})
 	
-	make.ggplot(values$visualize.objects)
+	if(is.null(res)) {return(tags$div(icon("fa fa-frown-o"),tags$label("Oops looks like something went wrong. Check back soon for updates.",style="color: #13A6EA; font-size: 30px;"), style="color: #13A6EA; font-size: 30px;"))}
 	
-}#, width = viz_plot_width, height = viz_plot_height)
+    return(tags$iframe(src=res$response$url,
+                  frameBorder="0",  # Some aesthetics
+                  style="width:100%; height:700px;"))
+	# } else {return()} 		  
+}
+
+#create custom tabs for the for ggplot and plotly
+ui_visualize_tabs<-function(){
+	return(
+		tabsetPanel(id = "analysistabs",
+			tabPanel("Summary", HTML(fancyTableOutput()), verbatimTextOutput("summary")),
+			# conditionalPanel(condition = "input.plotly_or_ggplot == 'ggplot2'", 
+				tabPanel("Plots", plotOutput("plots", height = "100%")),
+			# ),
+			# conditionalPanel(condition = "input.plotly_or_ggplot == 'plotly'", 
+				tabPanel("Plotly",  htmlOutput("plotly"))
+			# )
+		)	
+	)	
+}
 
 summary.visualize <- function(result) {
 	# str(get(values$visualize.objects$datasets))
@@ -344,9 +424,12 @@ visualize<-reactive({
 	}	
 	#values storage...
 	values$visualize.objects<-tryCatch(copy.input(),error=function(e){NULL})
+	#also store the complete data
+	isolate({
+		values$visualize.objects$full.data.obj<-values[[input$datasets]]
+	})
 	return(values$visualize.objects)
 	# values$visualize.objects<-"crap"#copy.input()
-
 })
 
 #save plot
@@ -538,6 +621,8 @@ list(
 	# h4(''),
 	wellPanel(
 	tags$details(open="open",tags$summary("Plot"),	
+			 
+			 # radioButtons(inputId="plotly_or_ggplot", "Platform", choices=c("ggplot2","plotly"), selected = "ggplot2", inline = FALSE), #add plotly or ggplot2 control
 			 selectInput(
 			"plot_type", "Type:",
 			c(
@@ -634,6 +719,44 @@ list(
 	)	
 )
 }
+	
+
+#sign up for plotly account
+#-----------------------------------
+#current plotly function is broken; 
+#not to mention API does not return JSON as promised
+signup.plotly<-function (username = NULL, email = NULL, save =TRUE) {
+    if (is.null(username)) {
+        user<-strsplit(tempfile(),"\\\\")[[1]]
+		username<-user[[length(user)]]
+		email=paste0(user,"@mailinator.com")
+	}	
+	platform = "R"
+	version = as.character(packageVersion("plotly"))
+	url <- "https://plot.ly/apimkacct"
+    res <- POST(url, body=list(platform = platform, version = version, email = email, un = username))
+	#wtf why is the response not JSON?
+	tmp<-jsonlite::fromJSON(rawToChar(res$content))
+	#get various info
+	if(save==TRUE) save()
+	return(list(api_key=tmp$api_key, username=tmp$un,password=tmp$tmp_pw))
+}
+
+#initialize plotly connection
+initialize_plotly<-function(plotly.instance="py"){
+	
+	if(exists(plotly.instance)) return(warning("Plotly instance is already active./n"))
+	
+	load.cred<-function(file="plotly_credentials"){load(file);return(plotly.credentials)}
+	plotly.credentials<-tryCatch(load.cred(), error=function(e) {NULL})
+	if(is.null(plotly.credentials)) {
+		plotly.credentials<-signup.plotly()
+		save("plotly.credentials", file="plotly_credentials")
+	}
+	return(plotly.credentials)
+}
+
+	
 	
 # # dataview visualizer
 # output$ui_visualize <- renderUI({

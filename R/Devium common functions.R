@@ -26,7 +26,6 @@ afixln<-function(a,keep.factors=FALSE){
 		return(obj)
 }
 
-
 #convert all columns of a data.frame or matrix to numeric (encoding characters) optional preserving factors
 afixlnf<-function(a,factors=TRUE){
 		
@@ -80,6 +79,7 @@ fixlt<-function(obj) {
 }
 
 #remove unused levels in factors
+#before droplevels
 fixfactors<-function(obj) {
 	#check what can be numeric
 	# fct<-apply(apply(apply(tmp,2,as.numeric),2,is.na),2,all) # a better way must exist?
@@ -90,7 +90,6 @@ fixfactors<-function(obj) {
 	obj[,fct]<-data.frame(tmp2)
 	return(obj)
 }
-
 
 #import from clipboard
 read.excel <- function(type="with.dimnames") {
@@ -234,9 +233,8 @@ devium.data.format<-function(obj, type){
 }
 
 #format binbase output (data with meta data structure)
-format.binbase.output<-function(data)
-	{
-
+format.binbase.output<-function(data){
+		#first row must have some ID 
 		#data = name as string
 		object<-get(data)#need to adjust for first row taken as column names
 		#format data object
@@ -274,12 +272,13 @@ format.binbase.output<-function(data)
 		# need to break factors
 		
 		#return results as a list
-		list(data=tmp.data,row.metadata=row.meta,col.metadata=col.meta)
+		list(data=data.frame(tmp.data),row.metadata=data.frame(row.meta),col.metadata=data.frame(col.meta))
 	}
 
+	
 #return objects to excel	
 return.to.Excel<-function(workbook.path="new",return.obj.list,return.name=names(return.obj.list),workbook.name=NULL)
-	{
+{
 		check.get.packages(c("XLConnect"))
 		
 		#load workbok
@@ -348,7 +347,7 @@ list.placement.full<-function(data.list,list.names,direction,start.col,start.row
 			
 # accesory fxn to list.placement.full
 list.object.dim.full<-function(data.list,list.names)
-	{
+{
 		l.dim<-list()
 		n<-length(data.list)
 		i<-1
@@ -518,8 +517,7 @@ unique.id<-function(obj)
 		}
 
 #function to check for packages and attempt to download if not found
-check.get.packages<-function(pkg)
-	{
+check.get.packages<-function(pkg){
 		options(warn=-1)
 		
 		# #make sure bio conductor is one of the repositories
@@ -588,7 +586,7 @@ check.get.packages<-function(pkg)
 
 #function to extract objects based on reference
 extract.on.index<-function(database,index=database[,1,drop=FALSE],what,extract.on="row")
-	{		
+{		
 		# the merge function should be used instead
 		if(extract.on=="col"){database<-t(database)}
 		#assume top row are column names
@@ -843,19 +841,15 @@ source.local.dir<-function(wd){
 	setwd(o.dir)
 }
 
-##merge two data sets based on a common index column
-## all unique levels of the index are preserved in the final object
-## i.e. no variables are dropped
-merge.all.col<-function(data1,data2,by="name"){
-		#merge 2 data sets by column retaining all unique and in common rows
-		full.mat<-unique(c(data1$name,data2$name))
-		rownames(data1)<-make.unique(data1$name)
-		rownames(data2)<-make.unique(data2$name)
-		merge1<-data1[full.mat,]
-		merge2<-data2[full.mat,]
-		merged<-data.frame(cbind(merge1,merge2))
-		merged
+#adapt writeClipboard for data frames
+#there is a built in version of this with write.table
+writeClip<-function(obj, delimit="|"){
+	# add dimnames to data for export
+	# collapse column wise on space
+	obj<-data.frame(row=c("",as.character(rownames(obj))),rbind(colnames(obj),as.matrix(obj)))
+	writeClipboard(join.columns(obj,delimit))	
 }
+
 
 
 

@@ -1,3 +1,56 @@
+#calculate area under the curve (AUC) for multiple groups
+multi.group.AUC<-function(data,subject.id,sample.type, time){
+	library(pracma)
+	#too lazy to rename objects from older fxn
+	subject.id<-as.factor(subject.id)
+	fact<-as.factor(sample.type)	#sample type factor
+	tme<-as.factor(time)	#time	
+	
+	#split objects
+	tmp.data<-split(data.frame(data),fact)
+	tmp.time<-split(tme,fact)
+	tmp.subs<-split(as.character(subject.id),fact)
+	
+	group.AUC<-lapply(1:nlevels(fact),function(i){
+		ddata<-tmp.data[[i]]
+		ttime<-tmp.time[[i]]
+		subs<-tmp.subs[[i]]
+		
+		#calculate AUC
+		AUC<-sapply(1:length(ddata),function(i)
+		{
+			
+			obj<-split(as.data.frame(ddata[[i]]),subs)
+			#subtract baseline (first level of time) to correct negative AUC 
+			tmp.time<-split(ttime,subs)
+			base.time<-levels(ttime)[1]
+			base.obj<-lapply(1:length(obj),function(j)
+				{
+					tmp<-as.numeric(as.matrix(unlist(obj[[j]])))
+					tmp-tmp[tmp.time[[j]]==base.time]
+				})
+			tmp<-split(as.data.frame(ttime),subs)
+			#x11()
+			#plot(as.numeric(as.matrix(do.call("cbind",tmp))),as.numeric(as.matrix(do.call("cbind",base.obj))))
+			out<-as.data.frame(sapply(1:length(obj),function(j)
+			{
+				x<-as.numeric(as.matrix(unlist(tmp[[j]])))
+				o<-order(x) # need to be in order else AUC will be wrong!
+				y<-as.numeric(as.matrix(unlist(base.obj[[j]])))
+				trapz(x[o],y[o])
+			}))
+		colnames(out)<-colnames(data[i])
+		out
+		})
+		tmp<-do.call("cbind",AUC)
+		rownames(tmp)<-paste(levels(fact)[i],names(split(as.data.frame(ttime),subs)),sep="_")
+		tmp
+	})	
+	res<-do.call("rbind",group.AUC)
+	colnames(res)<-colnames(data)
+	return(res)
+}
+
 #function to convert pattern to a single char objects name
 rename <- function(x, pattern, replace="_"){
 		#strangely sapply will not work without effort here
@@ -8,7 +61,6 @@ rename <- function(x, pattern, replace="_"){
 			}
 		return(x)	
 }
-
 
 # relative standard deviation
 #redo calc.stat using dplyr
@@ -134,7 +186,7 @@ anova.formula.list<-function(data,formula,meta.data){
 }
 
 #ANOVA with repeated measures and post hoc
-aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=NULL,p.adjust="BH"){
+aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=NULL,FDR="BH"){
 	#formula = formula excluding repeated terms
 	#meta data  = all factors
 	#repeated name of factor for repeated measures
@@ -147,6 +199,7 @@ aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=
 	  results<-list(p.value=vector("list",ncol(data)),post.hoc=vector("list",ncol(data)))
 	  for(i in 1:ncol(data)){
 			model<-tryCatch(aov(as.formula(paste("data[,",i,"]~",formula,sep="")),data=tmp.data), error=function(e){NULL})
+			
 			#get p-values
 			if(!is.null(repeated)){
 				names<-attr(model$Within$terms,'term.labels')
@@ -157,6 +210,7 @@ aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=
 				p.values<-data.frame(t(summary(model)[[1]][1:length(names),5,drop=FALSE]))
 				dimnames(p.values)<-list(colnames(data)[i],names)
 			}
+			
 			#pairwise t-tests (repeated) or TukeyHSD
 			if(post.hoc){
 				if(!is.null(repeated)){
@@ -184,11 +238,16 @@ aov.formula.list<-function(data,formula,meta.data=factor,post.hoc=TRUE,repeated=
 				post.h<-NULL
 			}
 			
+
 			results$p.value[[i]]<-p.values
 			results$post.hoc[[i]]<-post.h
 			
 		}	
-			return(list(p.values=do.call("rbind",results$p.value),post.hoc=do.call("rbind",results$post.hoc)))
+			tmp<-do.call("rbind",results$p.value)
+			FDR.p<-sapply(1:ncol(tmp), function(i) p.adjust(tmp[,i],method=FDR))
+			colnames(FDR.p)<-colnames(tmp)
+			p.vals<-data.frame(p.values=tmp,FDR.p.values=FDR.p)
+			return(list(p.values=p.vals,post.hoc=do.call("rbind",results$post.hoc)))
 			
 }
 
@@ -258,35 +317,40 @@ stats.summary <- function(data,comp.obj,formula,sigfigs=3,log=FALSE,rel=1,do.sta
 	}
 
 #function to carry out covariate adjustments
-#-------------------------
 covar.adjustment<-function(data,formula){
-	#set up that formula objects need to exists in the global environment --- fix this
-	#data--> subjects as rows, measurements as columns
-	#formula	<- ~ character vector
-	#lm will be iteratively fit on each variable 
-	#model residuals + preadjusted column median will be returned
-	data<-as.data.frame(data)
-	names(data)<-colnames(data)
-	output<-list()
-	n<-ncol(data)
-	output<-lapply(1:n,function(i)
-		{
-			tryCatch(tmp<-as.formula(c(paste(paste("data$'",colnames(data)[i],"'~",sep=""),paste(formula,sep="+"),sep=""))),
-			error= function(e){tmp<-as.formula(c(paste(paste("data[,i]","~",sep=""),paste(formula,sep="+"),sep="")))})
-			fit<-lm(tmp,data=data)$residuals
-			matrix(fit,,1)
-		})
-	out<-data.frame(do.call("cbind",output))
-	tryCatch(dimnames(out)<-dimnames(data), error=function(e){NULL}) # no clue why this throws errors randomly
-	#add back pre-adjustment column min to all
-	min<-apply(out,2,min, na.rm=T)
-	adj.out<-do.call("cbind",sapply(1:ncol(out),function(i)
-		{
-			out[,i,drop=F] + abs(min[i])
-		}))
-	return(adj.out)
-	}
-
+        #set up that formula objects need to exists in the global environment --- fix this
+        #data--> subjects as rows, measurements as columns
+        #formula        <- ~ character vector
+        #lm will be iteratively fit on each variable 
+        #model residuals + preadjusted column median will be returned
+		
+		#convert all to numeric
+		tmp<-dimnames(data)
+        data<-data.frame(do.call("cbind",lapply(data,as.numeric)))
+		dimnames(data)<-tmp
+        output<-list()
+        n<-ncol(data)
+        output<-lapply(1:n,function(i)
+                {
+                        tryCatch(tmp<-as.formula(c(paste(paste("data$'",colnames(data)[i],"'~",sep=""),paste(formula,sep="+"),sep=""))),
+                        error= function(e){tmp<-as.formula(c(paste(paste("data[,i]","~",sep=""),paste(formula,sep="+"),sep="")))})
+                        fit<-lm(tmp,data=data)$residuals
+						#need to account for missing values
+						tmp<-data[,i]
+						tmp[!is.na(tmp)]<-fit
+                        matrix(tmp,,1)
+                })
+        out<-data.frame(do.call("cbind",output))
+        tryCatch(dimnames(out)<-dimnames(data), error=function(e){NULL}) # no clue why this throws errors randomly
+        #add back pre-adjustment column min to all
+        min<-apply(out,2,min, na.rm=T)
+        adj.out<-do.call("cbind",sapply(1:ncol(out),function(i)
+                {
+                        out[,i,drop=F] + abs(min[i])
+                }))
+        return(adj.out)
+        }
+		
 #helper function for getting statistics for making box plots
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,conf.interval=.95, .drop=TRUE) {
 		require(plyr)
@@ -462,14 +526,15 @@ simple.lme<-function(data,factor,subject,FDR="BH", progress=TRUE,interaction=FAL
 #multi-LME with formula interface (also see simple.lme) # note random term should be +(1|random.term)
 formula.lme<-function(data,formula,FDR="BH", progress=TRUE){
 		#data  = data.frame of values to test and test factors
-		#factor = object to be tested 
-		#subject = identifier for repeated measures
+		
 		check.get.packages(c("lme4","car"))
 		#not sure how to ignore test factors in data, cause error in loop
 		
 		if (progress == TRUE){ pb <- txtProgressBar(min = 0, max = ncol(data), style = 3)} else {pb<-NULL}
 		lmer.p.values<-do.call("rbind",lapply(1:ncol(data), function(i){
 			if (progress == TRUE){setTxtProgressBar(pb, i)}
+			#avoid factor error, should avoid anova error below
+			if(is.factor(data[,i])| is.character(data[,i])) data[,i]<-fixlf(data[,i])
 			mod<-tryCatch(lmer(as.formula(paste0("data[,",i,"]~", formula)), data=data),error=function(e){NULL})
 			if(is.null(mod)){1} else {
 				res<-Anova(mod)
@@ -608,6 +673,7 @@ multi.pairwise.mann.whitney<-function(data,factor,progress=TRUE,FDR="BH",qvalue=
 		res
 	}))	
 }
+
 #Tests 
 test<-function(){
 
