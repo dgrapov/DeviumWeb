@@ -36,12 +36,11 @@ source.local.dir(paste0(getwd(),"/R")) # final
 
 # install.packages("devtools")
 if(!require(plotly)){
-	if(!require(devtools){install.packages(devtools)}
+	if(!require(devtools)){install.packages(devtools)}
 	library("devtools")
 	install_github("ropensci/plotly")
 	library(plotly)
 } 
-
 
 
 # R package dependencies
