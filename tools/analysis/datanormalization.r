@@ -56,17 +56,15 @@ ui_datanormalization <- function() {
   list(
   	wellPanel(
 		div(class="row-fluid", # see css.style for this as well
-			div(class="span6",actionButton("datanormalization_calculate", "Calculate")),
-			div(class="span6", actionButton("save_datanormalization_results", "Save"))
+			div(class="span6",actionButton("datanormalization_calculate", tags$div(icon("fa fa-gears"),tags$label(style="font-size: 30px;","Calculate"),style="font-size: 30px; color: #EF3732;")))
 		),
 		conditionalPanel(condition = "input.analysistabs == 'Plots'",
-			h3('Plot'),
-			tags$details(open="open",tags$summary("Options"),
+			tags$details(open="open",tags$summary(tags$div(icon("fa fa-bar-chart-o"),tags$label(style="font-size: 30px;","Plot"),style="font-size: 30px; color: #EF3732;")),
 				selectInput(inputId = "normalization_plot_type", label = "Type", choices = list("global view"="norm_plot_global","line plot"="norm_plot_line","box plot"="norm_plot_box","sample RSD"="norm_plot_sample_rsd","variable RSD"="norm_plot_variable_rsd","batch histogram"="norm_plot_sample_bar","variable histogram"="norm_plot_variable_bar"),selected="global view",multiple=FALSE),
 				conditionalPanel(condition = "input.normalization_plot_type == 'norm_plot_global'",
 					uiOutput("normalization_plot_global_variables"),
 					tags$style(type='text/css', "#normalization_plot_global_variables { height: 150px; padding-bottom: 10px;}"),
-					br(),
+					br(),br(),
 					numericInput(inputId ="normalization_plot_global_variables_limit", label = "Limit", min = 1, step = 2,value=10)
 				),
 				#should just update variables above to be multiple=FALSE
@@ -94,38 +92,39 @@ ui_datanormalization <- function() {
 				tags$style(type="text/css", "#datanormalization_plot_width {width:75px;}"),
 				tags$style(type="text/css", "#datanormalization_plot_height {width:75px;}")
 				)
+		),
+		br(),
+		tags$details(open="open",tags$summary(tags$div(icon("fa fa-wrench"),tags$label(style="font-size: 30px;","Normalize"),style="font-size: 30px; color: #EF3732;")),	
+			tags$details(open="open",tags$summary(tags$label(style="font-size: 20px; color: #13A6EA;","Data")),
+				uiOutput("normalization_variables"),
+				tags$style(type='text/css', "#normalization_variables { height: 150px; padding-bottom: 10px;}")
+			),
+			br(),br(),
+			tags$details(tags$summary(tags$label(style="font-size: 20px; color: #13A6EA;","Samples")),
+					selectInput(inputId = "normalization_type_sample", label = "Normalization", choices = list("none"="none","mean center"="mean","median center"="median","sum normal"="sum","l2 normal"="l2"),selected="none",multiple=FALSE)
+			),
+			tags$details(tags$summary(tags$label(style="font-size: 20px; color: #13A6EA;","Variables")),
+					selectInput(inputId = "normalization_type_trans_variable", label = "Transformation", choices = list("none"="none","natural logarithm"="ln","logarithm base 10"="log","power"="power"),selected="none",multiple=FALSE),
+					conditionalPanel(condition = "input.normalization_type_trans_variable == 'log'|input.normalization_type_trans_variable == 'ln'",
+						numericInput(inputId ="norm_log_scalar", label = "Constant", min = 0, step = 5,value=1)
+					),
+					conditionalPanel(condition = "input.normalization_type_trans_variable == 'power'",	
+						numericInput(inputId ="norm_power_scalar", label = "Power", step = 1,value=2)
+					),
+					selectInput(inputId = "normalization_type_center_variable", label = "Center", choices = list("none"="none","mean"="mean","median"="median"),selected="none",multiple=FALSE),		
+					selectInput(inputId = "normalization_type_norm_variable", label = "Normalization", choices = list("none"="none","unit variance"="uv","pareto"="pareto","sum normal"="sum","l2 normal"="l2","range scale"="range_scale"),selected="none",multiple=FALSE)		
+			),
+			tags$details(tags$summary(tags$label(style="font-size: 20px; color: #13A6EA;","Complex")),
+				uiOutput("normalization_batches") # batches for summaries and visualizations
+			)
 		),	
-		h3('Data'),
-		tags$details(open="open",tags$summary("Options"),
-			uiOutput("normalization_variables"),
-			tags$style(type='text/css', "#normalization_variables { height: 150px; padding-bottom: 10px;}")#,
-			# br()
-		),
-		h3('Samples'),
-		tags$details(open="open",tags$summary("Options"),
-				selectInput(inputId = "normalization_type_sample", label = "Normalization", choices = list("none"="none","mean center"="mean","median center"="median","sum normal"="sum","l2 normal"="l2"),selected="none",multiple=FALSE)
-		),
-		h3('Variables'),
-		tags$details(open="open",tags$summary("Options"),
-				selectInput(inputId = "normalization_type_trans_variable", label = "Transformation", choices = list("none"="none","natural logarithm"="ln","logarithm base 10"="log","power"="power"),selected="none",multiple=FALSE),
-				conditionalPanel(condition = "input.normalization_type_trans_variable == 'log'|input.normalization_type_trans_variable == 'ln'",
-					numericInput(inputId ="norm_log_scalar", label = "Constant", min = 0, step = 5,value=1)
-				),
-				conditionalPanel(condition = "input.normalization_type_trans_variable == 'power'",	
-					numericInput(inputId ="norm_power_scalar", label = "Power", step = 1,value=2)
-				),
-				selectInput(inputId = "normalization_type_center_variable", label = "Center", choices = list("none"="none","mean"="mean","median"="median"),selected="none",multiple=FALSE),		
-				selectInput(inputId = "normalization_type_norm_variable", label = "Normalization", choices = list("none"="none","unit variance"="uv","pareto"="pareto","sum normal"="sum","l2 normal"="l2","range scale"="range_scale"),selected="none",multiple=FALSE)		
-		),
-		h3('Complex'),
-		tags$details(open="open",tags$summary("Options"),
-			uiOutput("normalization_batches") # batches for summaries and visualizations
+		div(class="row-fluid",	
+			div(class="span6", actionButton("save_datanormalization_results", tags$div(icon("fa fa-save"),tags$label(style="font-size: 30px;","Save"),style="font-size: 30px; color: #EF3732;")))	
 		)	
-		
-	),
+	)
 	
 	# helpModal('Single mean','singleMean',includeMarkdown("tools/help/singleMean.md"))
-	helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
+	# helpModal('Devium','workinprogress',includeHTML("tools/help/workinprogress.html"))
  	)
 }
 

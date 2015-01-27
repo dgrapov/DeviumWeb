@@ -409,8 +409,23 @@ obj[sample(1:100,75)]<-NA
 colnames(obj)<-paste0(1:ncol(obj),"_variable")
 
 tryCatch(multiple.merge.na(obj),error=function(e){cat("multiple.merge.na<-->FAILED\n")})
-}
+#testing normalizations
+data(mtcars)
+library(car)
+#raw
+dat<-mtcars
+boxplot(dat)
 
+sdat<-scale(dat,center=TRUE,scale=FALSE)
+boxplot(sdat)
 
+sdat2<-scale.data(dat, type="mean", dim=2, positive.only=FALSE)
+boxplot(sdat2)
 
+#UV
+sdat3<-scale.data(dat, type="uv", dim=2, positive.only=FALSE)
+boxplot(sdat3)
+boxplot(scale(dat,center=FALSE,scale=apply(dat, 2, sd, na.rm = TRUE)))
+x<-scale(dat,center=FALSE,scale=TRUE)
+apply(x,2,sd)
 }
