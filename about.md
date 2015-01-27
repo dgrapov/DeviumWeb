@@ -1,19 +1,11 @@
----
-output:
-  html_document:
-    keep_md: yes
-    self_contained: no
----
-```{r echo = FALSE}
-info<-read.table(file="version_info", header=TRUE)
-```
+
 
 DeviumWeb
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
 ![logo](tools/help/figures/generic_logo.png)
 
-Version `r info$version` (`r info$date`)
+Version 0.4 (1/25/2015)
 
 By: Dmitry Grapov (dgrapov at gmail.com)
 
