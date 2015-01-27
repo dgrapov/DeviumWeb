@@ -19,9 +19,6 @@ input$x_facet<-"am"
 
 make.ggplot(input)
 
-
-
-
 }
 
 #main convoluted plotting fxn
@@ -725,7 +722,7 @@ list(
 #-----------------------------------
 #current plotly function is broken; 
 #not to mention API does not return JSON as promised
-signup.plotly<-function (username = NULL, email = NULL, save =TRUE) {
+signup.plotly<-function (username = NULL, email = NULL, save =TRUE,...) {
     if (is.null(username)) {
         user<-strsplit(tempfile(),"\\\\")[[1]]
 		username<-user[[length(user)]]
@@ -738,22 +735,23 @@ signup.plotly<-function (username = NULL, email = NULL, save =TRUE) {
 	#wtf why is the response not JSON?
 	tmp<-jsonlite::fromJSON(rawToChar(res$content))
 	#get various info
-	if(save==TRUE) save()
-	return(list(api_key=tmp$api_key, username=tmp$un,password=tmp$tmp_pw))
+	plotly_credentials<-list(api_key=tmp$api_key, username=tmp$un,password=tmp$tmp_pw)
+	if(save==TRUE) save(plotly_credentials,file="plotly_credentials")
+	return(plotly_credentials)
 }
 
 #initialize plotly connection
-initialize_plotly<-function(plotly.instance="py"){
+initialize_plotly<-function(plotly.instance="py",...){
 	
 	if(exists(plotly.instance)) return(warning("Plotly instance is already active./n"))
 	
 	load.cred<-function(file="plotly_credentials"){load(file);return(plotly.credentials)}
-	plotly.credentials<-tryCatch(load.cred(), error=function(e) {NULL})
-	if(is.null(plotly.credentials)) {
-		plotly.credentials<-signup.plotly()
-		save("plotly.credentials", file="plotly_credentials")
+	plotly_credentials<-tryCatch(load.cred(), error=function(e) {NULL})
+	if(is.null(plotly_credentials)) {
+		plotly_credentials<-signup.plotly(...)
+		save(plotly_credentials, file="plotly_credentials")
 	}
-	return(plotly.credentials)
+	return(plotly_credentials)
 }
 
 	
