@@ -42,13 +42,13 @@ summary.correlation <- function(dat) {
 	# 	cmat$P <- cmat$P[smat,smat]
 	# }
 
-	cr <- format(round(cmat$r,2))
+	cr <- format(signif(cmat$r,4))
   cr[abs(cmat$r) < input$cor_cutoff] <- ""
 	ltmat <- lower.tri(cr)
   cr[!ltmat] <- ""
 
 
-	cp <- format(round(cmat$P,2))
+	cp <- format(signif(cmat$P,4))
   cp[abs(cmat$r) < input$cor_cutoff] <- ""
   cp[!ltmat] <- ""
 
