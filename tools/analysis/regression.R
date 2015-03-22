@@ -7,14 +7,16 @@
 output$cor_var <- renderUI({
 
   vars <- varnames()
-  selectInput(inputId = "cor_var", label = "Select variables:", choices = vars, selected = NULL, multiple = TRUE)
+   selectInput(inputId = "cor_var", label = "Select variables:", choices = vars, selected = NULL, multiple = TRUE, selectize=FALSE)
 })
 
 ui_correlation <- function() {
   list(wellPanel(
 	h4('Correlation'),
-	    uiOutput("cor_var"),
-		  selectInput(inputId = "cor_type", label = "Method", choices = c("pearson", "spearman"), selected = "pearson"),
+	uiOutput("cor_var"),
+	hr(),
+	tags$style(type="text/css", "#cor_var {height: 150px;}"),
+        selectInput(inputId = "cor_type", label = "Method", choices = c("pearson", "spearman"), selected = "pearson"),
      	numericInput("cor_cutoff", label = "Correlation cutoff:", min = 0, max = 1, value = 0, step = .05)
 
 			# div(class="row-fluid",
@@ -42,13 +44,13 @@ summary.correlation <- function(dat) {
 	# 	cmat$P <- cmat$P[smat,smat]
 	# }
 
-	cr <- format(round(cmat$r,2))
+	cr <- format(signif(cmat$r,4))
   cr[abs(cmat$r) < input$cor_cutoff] <- ""
 	ltmat <- lower.tri(cr)
   cr[!ltmat] <- ""
 
 
-	cp <- format(round(cmat$P,2))
+	cp <- format(signif(cmat$P,4))
   cp[abs(cmat$r) < input$cor_cutoff] <- ""
   cp[!ltmat] <- ""
 
