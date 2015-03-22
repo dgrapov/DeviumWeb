@@ -1,4 +1,4 @@
-shinyUI(
+shinybootstrap2::withBootstrap2({shinyUI(
   pageWithSidebar(
 
     # Using a navbar rather than headerPanel to display app title
@@ -48,3 +48,4 @@ shinyUI(
     )
   )
 )
+})

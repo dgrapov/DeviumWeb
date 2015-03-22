@@ -343,7 +343,7 @@ output$manage_data_table <-renderDataTable({
 	if(is.null(dat)) return()
 	data.frame(rownames=rownames(dat),dat)
 
-}, options = list(bSortClasses = TRUE, aLengthMenu = c(5, 10, 50, 100), iDisplayLength = 5))
+}, options = list(bSortClasses = TRUE, aLengthMenu = c(5, 10, 50, 100), iDisplayLength = 5, scrollX=TRUE))
 
 
 #give data structure for debug

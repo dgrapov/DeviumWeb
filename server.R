@@ -1,5 +1,5 @@
 
-shinyServer(function(input, output, session) {
+shinybootstrap2::withBootstrap2({shinyServer(function(input, output, session) {
 
 	#Devium functions
 	source('devium.R', local = TRUE)
@@ -167,4 +167,5 @@ shinyServer(function(input, output, session) {
 	# session$onSessionEnded(function() {
  #  	q("ask")
  #  })
+})
 })
