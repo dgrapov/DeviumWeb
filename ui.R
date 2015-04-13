@@ -35,7 +35,7 @@ shinybootstrap2::withBootstrap2({shinyUI(
 
     mainPanel(	
 		# conditionalPanel(condition = "!is.null(values$DATA_message)",	
-			bsAlert(inputId = "DATA_anchor"),
+			bsAlert( "DATA_anchor"),
 		# ),
 		
 		conditionalPanel(condition = "input.datasets != ''",
