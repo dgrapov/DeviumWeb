@@ -30,12 +30,6 @@ Unzip the file and then start Devium by running the following code in the R cons
 
   
 	#-------------
- 	#Load Directly from GitHub
- 	#-------------
- 	library(shiny)
- 	runGitHub("DeviumWeb", "dgrapov")
-	
-	#-------------
 	#Windows
 	#-------------
   
