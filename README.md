@@ -50,6 +50,7 @@ If you find DeviumWeb useful please cite this tool as stated below.
 
 Dmitry Grapov. (2014) DeviumWeb: Dynamic Multivariate Data Analysis and Visualization Platform. v0.4 (1/25/2015)
 
+[![DOI](https://zenodo.org/badge/7400/dgrapov/DeviumWeb.svg)](http://dx.doi.org/10.5281/zenodo.17459)
 
 ### TODO
 
