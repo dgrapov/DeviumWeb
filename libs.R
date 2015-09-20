@@ -6,7 +6,7 @@ libs <- c("shiny", "knitr", "Hmisc", "car", "tools", "gridExtra", "markdown", "R
 #Devium Libs
 libs2 <- c("impute","WGCNA","RJSONIO","pwr","shiny", "car", "AER", "Ecdat", "foreign", "tools", "ggplot2", 
 	"gridExtra", "reshape2", "plyr", "markdown", "R.utils", "psych", "rela", "xts","fdrtool","pls",
-	"qvalue","pcaMethods","shiny","hexbin","RColorBrewer","shinyBS","httr","jsonlite","Rcpp","shinybootstrap2") #"arm", 
+	"qvalue","pcaMethods","shiny","hexbin","RColorBrewer","shinyBS","httr","jsonlite","Rcpp","shinybootstrap2","grid") #"arm", 
 
 libs<-unique(c(libs,libs2))	
 		

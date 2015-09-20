@@ -9,6 +9,8 @@
 ![logo](other/generic_logo.png)
 ![demo](other/devium1.0.gif)
 
+###[Screenshots](other/screenshots.md)
+
 ###Information
 
 Version: 0.4 (1/25/2015)
@@ -23,7 +25,7 @@ News: [See the latest features and fixes.](https://github.com/dgrapov/DeviumWeb/
 ### Installation
 
 - Required: [R](http://cran.rstudio.com/) (v3.1.1)
-- Required: [Shiny](http://www.rstudio.com/shiny/) (v0.10.2.2)
+- Required: [Shiny](http://www.rstudio.com/shiny/) (v0.10.2.2 to v0.11.1)
 - Required: A modern browser (e.g., Chrome (recommended), Firefox, or Safari).
 
 Unzip the file and then start Devium by running the following code in the R console (change file path if not unzipped to the desktop).
@@ -47,8 +49,6 @@ Unzip the file and then start Devium by running the following code in the R cons
 If you find DeviumWeb useful please cite this tool as stated below.
 
 Dmitry Grapov. (2014) DeviumWeb: Dynamic Multivariate Data Analysis and Visualization Platform. v0.4 (1/25/2015)
-
-[![DOI](https://zenodo.org/badge/7400/dgrapov/DeviumWeb.svg)](http://dx.doi.org/10.5281/zenodo.17459)
 
 
 ### TODO
