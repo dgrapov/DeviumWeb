@@ -1,7 +1,7 @@
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_buynowCC_LG.gif)](http://createdatasol.com/)]
 
-# [DeviumWeb](http://spark.rstudio.com/dgrapov/DeviumWeb/#)
+# [DeviumWeb](http://dgrapov.github.io/DeviumWeb/)
 =========
 <b>D</b>ynamic Multivariat<b>E</b> Data Analysis and <b>VI</b>s<b>U</b>alization Platfor<b>M</b> based on [Radiant](https://github.com/mostly-harmless/radiant) by Vincent Nijs.
 
