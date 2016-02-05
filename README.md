@@ -1,6 +1,3 @@
-<b><p style="color:red; font size='7';">DeviumWeb is no longer maintaned as an open source project. Please use the hosted version found at<a href="http://createdatasol.com/"> www.createdatasol.com</a></b></p>
-
-
 [DeviumWeb](http://dgrapov.github.io/DeviumWeb/)
 =========
 
@@ -12,7 +9,7 @@
 ###[Screenshots](other/screenshots.md)
 
 ### Installation
-<a href="http://createdatasol.com/"> www.createdatasol.com</a> 
+### <a href="http://createdatasol.com/"> www.createdatasol.com</a>
 
 ###Information
 
