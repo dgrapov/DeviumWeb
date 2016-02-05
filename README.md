@@ -11,6 +11,9 @@
 
 ###[Screenshots](other/screenshots.md)
 
+### Installation
+<a href="http://createdatasol.com/"> www.createdatasol.com</a> 
+
 ###Information
 
 Version: 0.4 (1/25/2015)
